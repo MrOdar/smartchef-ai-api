@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmartChef AI</title>
+    <meta name="description" content="Fotografia tu despensa y recibe 3 recetas de aprovechamiento generadas con Google Gemini.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127859;</text></svg>">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" href="#">
+            <span class="brand__mark" aria-hidden="true">&#127859;</span>
+            <span class="brand__text">SmartChef<span class="brand__ai">AI</span></span>
+        </a>
+
+        <nav class="topbar__nav">
+            <button class="navlink is-active" data-view="scan" type="button">Escanear</button>
+            <button class="navlink" data-view="favorites" type="button">Favoritos</button>
+            <button class="navlink" data-view="history" type="button">Historial</button>
+            <button class="navlink" id="btn-docs" type="button">API Docs</button>
+        </nav>
+
+        <div class="topbar__auth">
+            <span class="userchip is-hidden" id="userchip"></span>
+            <button class="btn btn--ghost" id="btn-auth" type="button">Iniciar sesion</button>
+        </div>
+    </div>
+</header>
+
+<main class="page">
+
+    <!-- ============ VISTA: ESCANEAR ============ -->
+    <section class="view is-active" id="view-scan">
+        <div class="hero">
+            <h1 class="hero__title">De tu refrigeradora a la mesa</h1>
+            <p class="hero__subtitle">
+                Sube una foto de tu despensa y la IA multimodal detectara tus ingredientes para
+                proponerte <strong>3 recetas de aprovechamiento</strong> al instante.
+            </p>
+        </div>
+
+        <div class="dropzone" id="dropzone" tabindex="0" role="button"
+             aria-label="Arrastra una foto o pulsa para seleccionar un archivo">
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
+
+            <div class="dropzone__empty" id="dropzone-empty">
+                <svg class="dropzone__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 16V4m0 0L8 8m4-4 4 4" stroke="currentColor" stroke-width="1.6"
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor"
+                          stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                </svg>
+                <p class="dropzone__title">Arrastra tu foto aqui</p>
+                <p class="dropzone__hint">o pulsa para elegir un archivo &middot; JPEG, PNG o WEBP &middot; max. 15MB</p>
+            </div>
+
+            <div class="preview is-hidden" id="preview">
+                <img class="preview__img" id="preview-img" alt="Vista previa de la foto cargada">
+                <div class="preview__meta">
+                    <span class="preview__name" id="preview-name"></span>
+                    <span class="preview__size" id="preview-size"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn--primary btn--lg" id="btn-analyze" type="button" disabled>
+                Analizar ingredientes
+            </button>
+            <button class="btn btn--ghost" id="btn-reset" type="button" hidden>Cambiar foto</button>
+        </div>
+
+        <!-- Indicador de procesamiento -->
+        <div class="loader is-hidden" id="loader" role="status" aria-live="polite">
+            <div class="loader__spinner" aria-hidden="true"></div>
+            <p class="loader__text">Analizando ingredientes con Gemini AI...</p>
+            <p class="loader__sub">Detectando alimentos y creando tus recetas</p>
+        </div>
+
+        <div class="alert is-hidden" id="alert" role="alert"></div>
+
+        <!-- Resultados -->
+        <section class="results is-hidden" id="results">
+            <div class="panel">
+                <h2 class="panel__title">Ingredientes detectados</h2>
+                <ul class="pills" id="detected-list"></ul>
+            </div>
+
+            <h2 class="section-title">Tus 3 recetas sugeridas</h2>
+            <div class="cards" id="recipe-cards"></div>
+        </section>
+    </section>
+
+    <!-- ============ VISTA: FAVORITOS ============ -->
+    <section class="view" id="view-favorites">
+        <h1 class="view__title">Mis recetas favoritas</h1>
+        <p class="view__subtitle">Las recetas que guardaste para cocinar mas tarde.</p>
+        <div class="cards" id="favorite-cards"></div>
+        <div class="empty is-hidden" id="favorites-empty">
+            <p>Todavia no has guardado ninguna receta.</p>
+        </div>
+    </section>
+
+    <!-- ============ VISTA: HISTORIAL ============ -->
+    <section class="view" id="view-history">
+        <h1 class="view__title">Historial de escaneos</h1>
+        <p class="view__subtitle">Cada foto que analizaste con su resultado completo.</p>
+        <div id="history-list"></div>
+        <div class="empty is-hidden" id="history-empty">
+            <p>Aun no tienes escaneos guardados en tu cuenta.</p>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <p>
+        SmartChef AI &middot; Spring Boot 3.3.4 &middot; Java 21 &middot; Google Gemini 1.5 Flash
+        &middot; <a href="/swagger-ui.html" target="_blank" rel="noopener">Documentacion OpenAPI</a>
+    </p>
+</footer>
+
+<!-- ============ MODAL: AUTENTICACION ============ -->
+<div class="modal is-hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+
+        <h2 class="modal__title" id="auth-title">Accede a tu cuenta</h2>
+
+        <div class="tabs">
+            <button class="tab is-active" data-tab="login" type="button">Iniciar sesion</button>
+            <button class="tab" data-tab="register" type="button">Crear cuenta</button>
+        </div>
+
+        <form class="form is-active" id="form-login" novalidate>
+            <label class="field">
+                <span class="field__label">Usuario o email</span>
+                <input class="field__input" name="username" type="text" autocomplete="username" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Contrasena</span>
+                <input class="field__input" name="password" type="password" autocomplete="current-password" required>
+            </label>
+            <p class="form__error is-hidden" data-form-error></p>
+            <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+        </form>
+
+        <form class="form" id="form-register" novalidate>
+            <label class="field">
+                <span class="field__label">Usuario</span>
+                <input class="field__input" name="username" type="text" minlength="3" maxlength="50" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Email</span>
+                <input class="field__input" name="email" type="email" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Nombre completo</span>
+                <input class="field__input" name="fullName" type="text" autocomplete="name">
+            </label>
+            <label class="field">
+                <span class="field__label">Contrasena</span>
+                <input class="field__input" name="password" type="password" minlength="8"
+                       autocomplete="new-password" required>
+                <span class="field__hint">Minimo 8 caracteres</span>
+            </label>
+            <p class="form__error is-hidden" data-form-error></p>
+            <button class="btn btn--primary btn--block" type="submit">Crear cuenta</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============ MODAL: SWAGGER UI ============ -->
+<div class="modal is-hidden" id="docs-modal" role="dialog" aria-modal="true" aria-labelledby="docs-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box modal__box--wide">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+        <h2 class="modal__title" id="docs-title">Documentacion interactiva de la API</h2>
+        <p class="modal__lead">
+            Prueba cada endpoint directamente desde Swagger UI. Tambien puedes abrirla en una
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">pestana nueva</a>.
+        </p>
+        <iframe class="docs-frame" id="docs-frame" title="Swagger UI" src="about:blank"></iframe>
+    </div>
+</div>
+
+<div class="toast is-hidden" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

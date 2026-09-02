@@ -1,0 +1,42 @@
+server:
+  port: 0
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:smartchef_test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+
+  sql:
+    init:
+      mode: never
+
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 20MB
+
+smartchef:
+  jwt:
+    secret: dGVzdC1vbmx5LXNlY3JldC1rZXktZm9yLXNtYXJ0Y2hlZi1pbnRlZ3JhdGlvbi10ZXN0cy1oczI1Ni02NC1ieXRlcy1sb25n
+    expiration-ms: 86400000
+  gemini:
+    api-key: test-key-not-used
+    model: gemini-1.5-flash
+    base-url: http://localhost:0/v1beta
+    timeout-seconds: 5
+    temperature: 0.4
+  image:
+    max-width: 1024
+    resize-threshold-bytes: 1048576
+
+logging:
+  level:
+    root: WARN
+    com.smartchef.api: INFO

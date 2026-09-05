@@ -2,6 +2,7 @@ services:
   - type: web
     name: smartchef-ai-api
     runtime: docker
+    plan: free
     dockerfilePath: ./Dockerfile
     healthCheckPath: /actuator/health
     envVars:
@@ -11,32 +12,5 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
-      - key: JPA_DDL_AUTO
-        value: update
-      - key: DB_HOST
-        fromDatabase:
-          name: smartchef-db
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: smartchef-db
-          property: port
-      - key: DB_NAME
-        fromDatabase:
-          name: smartchef-db
-          property: database
-      - key: DATABASE_USERNAME
-        fromDatabase:
-          name: smartchef-db
-          property: user
-      - key: DATABASE_PASSWORD
-        fromDatabase:
-          name: smartchef-db
-          property: password
-      - key: DB_SSLMODE
-        value: require
-
-databases:
-  - name: smartchef-db
-    databaseName: smartchef
-    plan: free
+      - key: DATABASE_URL
+        sync: false

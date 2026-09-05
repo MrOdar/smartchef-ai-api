@@ -18,10 +18,9 @@ spring:
       max-request-size: 20MB
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:smartchef}?sslmode=${DB_SSLMODE:prefer}}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL:jdbc:h2:file:./data/smartchef;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
     hikari:
       maximum-pool-size: 5
       connection-timeout: 20000

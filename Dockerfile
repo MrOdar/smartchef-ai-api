@@ -16,7 +16,9 @@ FROM eclipse-temurin:21-jre-alpine AS runtime
 WORKDIR /app
 
 # Usuario sin privilegios
-RUN addgroup -S smartchef && adduser -S smartchef -G smartchef
+RUN addgroup -S smartchef && adduser -S smartchef -G smartchef && \
+    mkdir -p /app/data && \
+    chown -R smartchef:smartchef /app
 
 COPY --from=build /build/target/*.jar app.jar
 

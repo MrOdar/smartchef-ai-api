@@ -11,11 +11,22 @@ public record GeminiProperties(
         double temperature) {
 
     public GeminiProperties {
+        if (apiKey != null) {
+            apiKey = apiKey.trim();
+            if ((apiKey.startsWith("\"") && apiKey.endsWith("\""))
+                    || (apiKey.startsWith("'") && apiKey.endsWith("'"))) {
+                apiKey = apiKey.substring(1, apiKey.length() - 1).trim();
+            }
+        }
         if (model == null || model.isBlank()) {
-            model = "gemini-1.5-flash";
+            model = "gemini-2.5-flash";
+        } else {
+            model = model.trim();
         }
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+        } else {
+            baseUrl = baseUrl.trim();
         }
         if (timeoutSeconds <= 0) {
             timeoutSeconds = 60;
@@ -26,7 +37,14 @@ public record GeminiProperties(
     }
 
     public String generateContentUrl() {
-        return "%s/models/%s:generateContent?key=%s".formatted(baseUrl, model, apiKey);
+        return generateContentUrl(this.model);
+    }
+
+    public String generateContentUrl(String targetModel) {
+        String effectiveModel = (targetModel != null && !targetModel.isBlank())
+                ? targetModel.trim()
+                : this.model;
+        return "%s/models/%s:generateContent?key=%s".formatted(baseUrl, effectiveModel, apiKey != null ? apiKey : "");
     }
 
     public boolean hasApiKey() {

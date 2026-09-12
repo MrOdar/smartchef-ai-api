@@ -23,6 +23,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
@@ -194,11 +196,29 @@ class GeminiVisionServiceTest {
     void requiresApiKey() {
         GeminiVisionService withoutKey = new GeminiVisionService(
                 restTemplate,
-                new GeminiProperties("", "gemini-1.5-flash", "https://example.invalid/v1beta", 30, 0.4),
+                new GeminiProperties("", "gemini-2.5-flash", "https://example.invalid/v1beta", 30, 0.4),
                 objectMapper);
 
         assertThatThrownBy(() -> withoutKey.analyzeImage(IMAGE, "image/jpeg"))
                 .isInstanceOf(GeminiServiceException.class)
                 .hasMessageContaining("GEMINI_API_KEY");
+    }
+
+    @Test
+    @DisplayName("Hace fallback al siguiente modelo si el primero retorna 404 Not Found")
+    void fallsBackToNextModelWhen404() {
+        HttpClientErrorException notFound = HttpClientErrorException.create(
+                HttpStatus.NOT_FOUND, "Not Found", org.springframework.http.HttpHeaders.EMPTY,
+                "{\"error\":{\"code\":404,\"message\":\"models/gemini-1.5-flash is not found for API version v1beta\"}}".getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8);
+
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(notFound)
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(result.recipes()).hasSize(1);
+        assertThat(result.recipes().get(0).title()).isEqualTo("Tortilla de tomate");
     }
 }

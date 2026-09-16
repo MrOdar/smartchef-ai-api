@@ -242,4 +242,8 @@ public class RecipeService {
         String trimmed = value.trim();
         return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
     }
+
+    public java.util.Map<String, Object> diagnoseGemini() {
+        return geminiVisionService.diagnose();
+    }
 }

@@ -109,4 +109,11 @@ public class RecipeController {
             @AuthenticationPrincipal SmartChefUserDetails principal) {
         return ResponseEntity.ok(recipeService.favorites(principal.getId()));
     }
+
+    @GetMapping("/diagnostics")
+    @Operation(summary = "Diagnostico de conexion con Gemini AI",
+            description = "Consulta la API de Google y devuelve los modelos soportados por la API key configurada.")
+    public ResponseEntity<java.util.Map<String, Object>> diagnostics() {
+        return ResponseEntity.ok(recipeService.diagnoseGemini());
+    }
 }

@@ -18,7 +18,9 @@ spring:
       max-request-size: 20MB
 
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:file:./data/smartchef;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE}
+    # H2 embebido solo como respaldo de desarrollo. AUTO_SERVER no se usa: H2 lo
+    # rechaza junto a DB_CLOSE_ON_EXIT=FALSE y aqui solo hay un proceso.
+    url: ${DATABASE_URL:jdbc:h2:file:./data/smartchef;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
     username: ${DATABASE_USERNAME:sa}
     password: ${DATABASE_PASSWORD:}
     hikari:
@@ -54,7 +56,7 @@ smartchef:
     expiration-ms: 86400000
   gemini:
     api-key: ${GEMINI_API_KEY:}
-    model: ${GEMINI_MODEL:gemini-3.8-flash}
+    model: ${GEMINI_MODEL:gemini-3.5-flash-lite}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
     timeout-seconds: 60
     temperature: 0.4

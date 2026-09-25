@@ -7,7 +7,10 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,7 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.smartchef.api.entity.Role;
 import com.smartchef.api.entity.User;
 import com.smartchef.api.exception.GeminiServiceException;
+import com.smartchef.api.repository.ScanSessionRepository;
 import com.smartchef.api.repository.UserRepository;
+import com.smartchef.api.service.DemoDataSeeder;
 import com.smartchef.api.service.GeminiVisionService;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,6 +59,12 @@ class SmartChefApiIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ScanSessionRepository scanSessionRepository;
+
+    @Autowired
+    private DemoDataSeeder demoDataSeeder;
 
     @MockBean
     private GeminiVisionService geminiVisionService;
@@ -245,7 +256,7 @@ class SmartChefApiIntegrationTest {
                 .andExpect(jsonPath("$.recipes[0].difficulty", is("FACIL")))
                 .andExpect(jsonPath("$.recipes[0].prepTimeMinutes", is(20)))
                 .andExpect(jsonPath("$.recipes[0].caloriesEstimate", is(380)))
-                .andExpect(jsonPath("$.recipes[0].steps", hasSize(3)))
+                .andExpect(jsonPath("$.recipes[0].steps", hasSize(4)))
                 .andExpect(jsonPath("$.recipes[0].ingredients", hasSize(3)))
                 .andExpect(jsonPath("$.recipes[0].ingredients[0].available", is(true)))
                 .andExpect(jsonPath("$.recipes[0].ingredients[2].available", is(false)))
@@ -287,6 +298,207 @@ class SmartChefApiIntegrationTest {
         mockMvc.perform(multipart("/api/v1/recipes/generate-from-image"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", is("MISSING_PARAMETER")));
+    }
+
+    // --- Demo precalculada (Fase 2) ----------------------------------------
+
+    @Test
+    @DisplayName("La demo devuelve 3 recetas sembradas SIN llamar a Gemini")
+    void demoReturnsSeededRecipesWithoutCallingGemini() throws Exception {
+        // Se limpia el registro de interacciones para que la verificacion cubra
+        // exactamente esta peticion y no el arranque del contexto.
+        reset(geminiVisionService);
+
+        mockMvc.perform(get("/api/v1/recipes/demo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scanSessionId", notNullValue()))
+                .andExpect(jsonPath("$.recipes", hasSize(3)))
+                .andExpect(jsonPath("$.recipes[0].title",
+                        is("Pisto casero con huevo escalfado")))
+                .andExpect(jsonPath("$.recipes[0].chefTip", notNullValue()))
+                .andExpect(jsonPath("$.detectedIngredients", hasSize(greaterThan(5))));
+
+        // Lo esencial: ni una sola llamada saliente, ni cuota consumida.
+        verifyNoInteractions(geminiVisionService);
+    }
+
+    @Test
+    @DisplayName("Las 3 recetas demo cumplen el estandar de receta extensa")
+    void demoRecipesAreRich() throws Exception {
+        mockMvc.perform(get("/api/v1/recipes/demo"))
+                .andExpect(status().isOk())
+                // 4-6 pasos detallados y un tip en cada una.
+                .andExpect(jsonPath("$.recipes[0].steps", hasSize(5)))
+                .andExpect(jsonPath("$.recipes[1].steps", hasSize(5)))
+                .andExpect(jsonPath("$.recipes[2].steps", hasSize(5)))
+                .andExpect(jsonPath("$.recipes[0].chefTip", notNullValue()))
+                .andExpect(jsonPath("$.recipes[1].chefTip", notNullValue()))
+                .andExpect(jsonPath("$.recipes[2].chefTip", notNullValue()))
+                .andExpect(jsonPath("$.recipes[0].ingredients", hasSize(greaterThan(4))))
+                .andExpect(jsonPath("$.recipes[0].difficulty", is("MEDIA")))
+                .andExpect(jsonPath("$.recipes[1].difficulty", is("FACIL")));
+    }
+
+    @Test
+    @DisplayName("La siembra es idempotente: no duplica al repetirse")
+    void demoSeedingIsIdempotent() throws Exception {
+        long before = scanSessionRepository.findDemoSessions().size();
+
+        // Simula un reinicio de la aplicacion.
+        demoDataSeeder.run(null);
+        demoDataSeeder.run(null);
+
+        assertThat(scanSessionRepository.findDemoSessions()).hasSize((int) before);
+        assertThat(before).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("Una receta demo se puede guardar en favoritos de verdad")
+    void demoRecipeCanBeFavorited() throws Exception {
+        String token = registerAndGetToken("chef_demo", "demo@smartchef.test");
+
+        String body = mockMvc.perform(get("/api/v1/recipes/demo"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        long recipeId = objectMapper.readTree(body).at("/recipes/0/id").asLong();
+
+        mockMvc.perform(post("/api/v1/recipes/" + recipeId + "/favorite")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.favorite", is(true)));
+
+        mockMvc.perform(get("/api/v1/recipes/favorites").header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].title", is("Pisto casero con huevo escalfado")));
+
+        // Y al volver a pedir la demo con token, aparece ya marcada.
+        mockMvc.perform(get("/api/v1/recipes/demo").header("Authorization", bearer(token)))
+                .andExpect(jsonPath("$.recipes[0].favorite", is(true)));
+    }
+
+    @Test
+    @DisplayName("La demo no contamina el historial de ningun usuario")
+    void demoDoesNotAppearInUserHistory() throws Exception {
+        String token = registerAndGetToken("chef_limpio", "limpio@smartchef.test");
+
+        mockMvc.perform(get("/api/v1/recipes/demo")).andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/recipes/history").header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    @DisplayName("La foto de demostracion se sirve publicamente")
+    void demoPhotoIsPubliclyServed() throws Exception {
+        mockMvc.perform(get("/assets/demo-fridge.jpg"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("El generador de QR se sirve en local, sin CDN externo")
+    void qrLibraryIsServedLocally() throws Exception {
+        String qr = mockMvc.perform(get("/assets/qr.js"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(qr).contains("global.QR");
+    }
+
+    @Test
+    @DisplayName("La SPA trae el hero con los 3 botones y no usa CDN")
+    void landingHeroIsPresent() throws Exception {
+        String html = mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(html)
+                .contains("btn-hero-upload")
+                .contains("btn-hero-demo")
+                .contains("btn-hero-qr")
+                .contains("qr-modal")
+                .contains("assets/qr.js");
+
+        // Regla del proyecto: cero dependencias externas en el frontend.
+        assertThat(html)
+                .as("el frontend no debe cargar nada desde un CDN")
+                .doesNotContain("https://cdn")
+                .doesNotContain("unpkg.com")
+                .doesNotContain("jsdelivr");
+    }
+
+    @Test
+    @DisplayName("La URL publica del QR esta en un unico sitio de app.js")
+    void productionUrlIsDeclaredOnce() throws Exception {
+        String js = mockMvc.perform(get("/app.js"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(js.split("onrender\\.com", -1).length - 1)
+                .as("la direccion de produccion debe aparecer una sola vez")
+                .isEqualTo(1);
+        assertThat(js).contains("PRODUCTION_URL");
+    }
+
+    // --- Tip del chef (Fase 2) ---------------------------------------------
+
+    @Test
+    @DisplayName("El tip del chef viaja en el escaneo, el historial y los favoritos")
+    void chefTipSurvivesFullRoundTrip() throws Exception {
+        String token = registerAndGetToken("chef_tip", "tip@smartchef.test");
+
+        // 1. Escaneo: el tip llega en la respuesta inmediata.
+        String scanBody = mockMvc.perform(multipart("/api/v1/recipes/generate-from-image")
+                        .file(photo)
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipes[0].chefTip",
+                        containsString("Deja reposar el plato")))
+                .andExpect(jsonPath("$.recipes[1].chefTip", notNullValue()))
+                .andExpect(jsonPath("$.recipes[2].chefTip", notNullValue()))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        long recipeId = objectMapper.readTree(scanBody).at("/recipes/0/id").asLong();
+
+        // 2. Historial: se leyo de la base de datos, no de memoria.
+        mockMvc.perform(get("/api/v1/recipes/history").header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].recipes[0].chefTip",
+                        containsString("Deja reposar el plato")));
+
+        // 3. Favoritos: misma receta por otra consulta distinta.
+        mockMvc.perform(post("/api/v1/recipes/" + recipeId + "/favorite")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/recipes/favorites").header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].chefTip", containsString("Deja reposar el plato")));
+    }
+
+    @Test
+    @DisplayName("Si la IA omite el chef_tip, la receta se guarda sin tip y no falla")
+    void missingChefTipIsStoredAsNull() throws Exception {
+        given(geminiVisionService.analyzeImage(any(), anyString()))
+                .willReturn(TestDataFactory.resultWithoutChefTip());
+
+        mockMvc.perform(multipart("/api/v1/recipes/generate-from-image").file(photo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipes[0].title", is("Receta sin consejo")))
+                // default-property-inclusion: non_null omite el campo por completo,
+                // que es justo lo que el frontend necesita para no pintar el recuadro.
+                .andExpect(jsonPath("$.recipes[0].chefTip").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("Las recetas extensas llegan completas con sus 4 pasos detallados")
+    void longRecipesKeepAllSteps() throws Exception {
+        mockMvc.perform(multipart("/api/v1/recipes/generate-from-image").file(photo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.recipes[0].steps", hasSize(4)))
+                .andExpect(jsonPath("$.recipes[0].description",
+                        containsString("Ideal para una cena rapida")));
     }
 
     @Test
@@ -394,7 +606,7 @@ class SmartChefApiIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id", is((int) recipeId)))
                 .andExpect(jsonPath("$[0].favorite", is(true)))
-                .andExpect(jsonPath("$[0].steps", hasSize(3)))
+                .andExpect(jsonPath("$[0].steps", hasSize(4)))
                 .andExpect(jsonPath("$[0].ingredients", hasSize(3)));
 
         // Segunda llamada: la elimina.

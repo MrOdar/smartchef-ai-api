@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS scan_sessions (
     id                           BIGSERIAL PRIMARY KEY,
     user_id                      BIGINT REFERENCES users (id) ON DELETE SET NULL,
     detected_ingredients_summary TEXT,
+    demo                         BOOLEAN,
     created_at                   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS recipes (
     difficulty        VARCHAR(10),
     calories_estimate INTEGER,
     steps_json        TEXT,
+    chef_tip          TEXT,
     created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

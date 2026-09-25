@@ -46,6 +46,10 @@ public record GeminiRecipeResult(
             @JsonProperty("steps")
             List<String> steps,
 
+            /** Consejo practico del chef. Puede faltar si el modelo lo omite. */
+            @JsonProperty("chef_tip")
+            String chefTip,
+
             @JsonProperty("ingredients")
             List<GeneratedIngredient> ingredients) {
 

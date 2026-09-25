@@ -75,19 +75,40 @@ public final class TestDataFactory {
                                                              int minutes,
                                                              String difficulty,
                                                              int calories) {
+        return recipe(title, minutes, difficulty, calories,
+                "Deja reposar el plato 2 minutos antes de servir para que asienten los sabores.");
+    }
+
+    /** Variante con tip explicito, para cubrir tambien el caso de tip nulo. */
+    public static GeminiRecipeResult.GeneratedRecipe recipe(String title,
+                                                            int minutes,
+                                                            String difficulty,
+                                                            int calories,
+                                                            String chefTip) {
         return new GeminiRecipeResult.GeneratedRecipe(
                 title,
-                "Receta de aprovechamiento con los ingredientes de tu despensa.",
+                "Receta de aprovechamiento con los ingredientes de tu despensa. "
+                        + "Queda jugosa por dentro y ligeramente dorada por fuera. "
+                        + "Ideal para una cena rapida entre semana.",
                 minutes,
                 difficulty,
                 calories,
                 List.of(
-                        "Prepara y trocea los ingredientes disponibles.",
-                        "Cocina a fuego medio durante " + (minutes / 2) + " minutos.",
-                        "Sazona al gusto y sirve caliente."),
+                        "Prepara y trocea los ingredientes disponibles en dados regulares.",
+                        "Sofrie a fuego medio durante " + (minutes / 4) + " minutos hasta que doren.",
+                        "Incorpora el resto y cocina a fuego suave " + (minutes / 2) + " minutos.",
+                        "Sazona, retira del fuego y sirve caliente."),
+                chefTip,
                 List.of(
                         new GeminiRecipeResult.GeneratedIngredient("tomate", "2 unidades", true),
                         new GeminiRecipeResult.GeneratedIngredient("huevo", "3 unidades", true),
                         new GeminiRecipeResult.GeneratedIngredient("albahaca fresca", "1 ramita", false)));
+    }
+
+    /** Resultado donde el modelo omitio el chef_tip: debe persistirse como nulo. */
+    public static GeminiRecipeResult resultWithoutChefTip() {
+        return new GeminiRecipeResult(
+                List.of("tomate", "huevo"),
+                List.of(recipe("Receta sin consejo", 20, "FACIL", 300, null)));
     }
 }

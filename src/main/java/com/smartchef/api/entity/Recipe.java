@@ -52,6 +52,10 @@ public class Recipe {
     @Column(name = "steps_json", columnDefinition = "TEXT")
     private String stepsJson;
 
+    /** Consejo del chef. Nulo en las recetas creadas antes de la Fase 2. */
+    @Column(name = "chef_tip", columnDefinition = "TEXT")
+    private String chefTip;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -134,6 +138,14 @@ public class Recipe {
 
     public void setStepsJson(String stepsJson) {
         this.stepsJson = stepsJson;
+    }
+
+    public String getChefTip() {
+        return chefTip;
+    }
+
+    public void setChefTip(String chefTip) {
+        this.chefTip = chefTip;
     }
 
     public Instant getCreatedAt() {

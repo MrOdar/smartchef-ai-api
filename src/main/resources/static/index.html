@@ -35,11 +35,32 @@
     <!-- ============ VISTA: ESCANEAR ============ -->
     <section class="view is-active" id="view-scan">
         <div class="hero">
-            <h1 class="hero__title">De tu refrigeradora a la mesa</h1>
+            <p class="hero__eyebrow">Cocina de aprovechamiento con IA</p>
+            <h1 class="hero__title">
+                &iquest;No sabes que cocinar con lo que tienes en tu refri?
+            </h1>
             <p class="hero__subtitle">
-                Sube una foto de tu despensa y la IA multimodal detectara tus ingredientes para
-                proponerte <strong>3 recetas de aprovechamiento</strong> al instante.
+                La IA crea <strong>3 recetas gourmet de aprovechamiento</strong> en segundos.
+                Solo necesitas una foto de tu refrigeradora o tu despensa.
             </p>
+
+            <div class="hero__actions">
+                <button class="btn btn--primary btn--lg" id="btn-hero-upload" type="button">
+                    <span aria-hidden="true">&#128247;</span> Subir mi foto
+                </button>
+                <button class="btn btn--soft btn--lg" id="btn-hero-demo" type="button">
+                    <span aria-hidden="true">&#9889;</span> Probar con foto demo
+                </button>
+                <button class="btn btn--soft btn--lg" id="btn-hero-qr" type="button" hidden>
+                    <span aria-hidden="true">&#128241;</span> Abrir en celular
+                </button>
+            </div>
+
+            <ul class="hero__facts">
+                <li><strong>3</strong> recetas por foto</li>
+                <li><strong>~2 s</strong> de analisis</li>
+                <li><strong>0 &euro;</strong> sin registro</li>
+            </ul>
         </div>
 
         <div class="dropzone" id="dropzone" tabindex="0" role="button"
@@ -77,7 +98,7 @@
         <div class="loader is-hidden" id="loader" role="status" aria-live="polite">
             <div class="loader__spinner" aria-hidden="true"></div>
             <p class="loader__text">Analizando ingredientes con Gemini AI...</p>
-            <p class="loader__sub">Detectando alimentos y creando tus recetas</p>
+            <p class="loader__sub" id="loader-sub">Detectando alimentos y creando tus recetas</p>
         </div>
 
         <div class="alert is-hidden" id="alert" role="alert"></div>
@@ -187,8 +208,28 @@
     </div>
 </div>
 
+<!-- ============ MODAL: CODIGO QR ============ -->
+<div class="modal is-hidden" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box modal__box--narrow">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+
+        <h2 class="modal__title" id="qr-title">Abrir en tu celular</h2>
+        <p class="modal__lead">
+            Escanea el codigo con la camara de tu telefono para abrir SmartChef AI
+            y fotografiar tu refrigeradora directamente.
+        </p>
+
+        <div class="qr" id="qr-canvas" aria-live="polite"></div>
+
+        <p class="qr__url" id="qr-url"></p>
+        <p class="qr__note is-hidden" id="qr-note"></p>
+    </div>
+</div>
+
 <div class="toast is-hidden" id="toast" role="status" aria-live="polite"></div>
 
+<script src="assets/qr.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

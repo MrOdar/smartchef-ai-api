@@ -67,6 +67,25 @@ public class RecipeController {
         return ResponseEntity.ok(recipeService.generateFromImage(image, userId));
     }
 
+    @GetMapping("/demo")
+    @Operation(summary = "Resultado de demostracion instantaneo",
+            description = """
+                    Devuelve el analisis precalculado de la foto de ejemplo
+                    (`/assets/demo-fridge.jpg`) con sus 3 recetas. Responde al instante
+                    y **no consume cuota de Gemini**: es una unica lectura de base de datos,
+                    asi que funciona aunque el servicio de IA no este disponible.
+                    Las recetas son filas reales, por lo que pueden guardarse en favoritos.
+                    Si envias un token, se marca cuales ya tienes guardadas.""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sesion de demostracion"),
+            @ApiResponse(responseCode = "404", description = "La demo aun no esta sembrada",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<ScanResultResponse> demo(
+            @AuthenticationPrincipal SmartChefUserDetails principal) {
+        return ResponseEntity.ok(recipeService.demo(principal == null ? null : principal.getId()));
+    }
+
     @GetMapping("/history")
     @Operation(summary = "Historial de escaneos del usuario",
             description = "Devuelve las sesiones previas con sus recetas, mas recientes primero.",

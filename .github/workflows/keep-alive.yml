@@ -1,0 +1,21 @@
+name: Keep Alive SmartChef Render
+
+on:
+  schedule:
+    # Corre cada 10 minutos para evitar que Render se duerma
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Permite dispararlo manualmente desde GitHub Actions
+
+jobs:
+  ping-render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping SmartChef Health Endpoint
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://smartchef-ai-api.onrender.com/actuator/health)
+          echo "Render Health HTTP Status: $response"
+          if [ "$response" -eq 200 ] || [ "$response" -eq 301 ] || [ "$response" -eq 302 ]; then
+            echo "SmartChef está despierto y saludable."
+          else
+            echo "Aviso: Código HTTP recibido: $response"
+          fi

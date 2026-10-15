@@ -15,6 +15,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -66,6 +67,13 @@ public class GeminiVisionService {
             - Si la imagen no contiene alimentos, devuelve "detected_ingredients" vacio y "recipes" vacio.
             """;
 
+    private static final List<String> FALLBACK_MODELS = List.of(
+            "gemini-2.5-flash",
+            "gemini-2.0-flash",
+            "gemini-2.5-flash-lite",
+            "gemini-1.5-flash-latest"
+    );
+
     private final RestTemplate restTemplate;
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
@@ -89,23 +97,96 @@ public class GeminiVisionService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-        String rawResponse;
-        try {
-            rawResponse = restTemplate.postForObject(
-                    properties.generateContentUrl(),
-                    new HttpEntity<>(requestBody, headers),
-                    String.class);
-        } catch (RestClientException e) {
-            throw new GeminiServiceException(
-                    "No se pudo contactar al servicio de IA de Gemini: " + e.getMessage(), e);
+        List<String> candidateModels = getCandidateModels();
+        String rawResponse = null;
+        Exception lastException = null;
+
+        for (int i = 0; i < candidateModels.size(); i++) {
+            String targetModel = candidateModels.get(i);
+            String url = properties.generateContentUrl(targetModel);
+            try {
+                log.info("Invocando Gemini AI con modelo: {}", targetModel);
+                rawResponse = restTemplate.postForObject(url, entity, String.class);
+                if (rawResponse != null && !rawResponse.isBlank()) {
+                    if (isModelNotFoundError(rawResponse) && i < candidateModels.size() - 1) {
+                        log.warn("Gemini informo que el modelo '{}' no esta disponible. Probando modelo alternativo...", targetModel);
+                        continue;
+                    }
+                    break;
+                }
+            } catch (HttpStatusCodeException e) {
+                lastException = e;
+                if (isNotFoundOrUnsupported(e) && i < candidateModels.size() - 1) {
+                    log.warn("El modelo '{}' devolvio error HTTP {} ({}). Probando modelo alternativo...",
+                            targetModel, e.getStatusCode(), e.getStatusText());
+                    continue;
+                }
+                throw new GeminiServiceException(
+                        "No se pudo contactar al servicio de IA de Gemini: " + e.getMessage(), e);
+            } catch (RestClientException e) {
+                lastException = e;
+                if (isNotFoundOrUnsupported(e) && i < candidateModels.size() - 1) {
+                    log.warn("Fallo de llamada con modelo '{}': {}. Probando modelo alternativo...",
+                            targetModel, e.getMessage());
+                    continue;
+                }
+                throw new GeminiServiceException(
+                        "No se pudo contactar al servicio de IA de Gemini: " + e.getMessage(), e);
+            }
         }
 
         if (rawResponse == null || rawResponse.isBlank()) {
+            if (lastException != null) {
+                throw new GeminiServiceException(
+                        "No se pudo contactar al servicio de IA de Gemini: " + lastException.getMessage(), lastException);
+            }
             throw new GeminiServiceException("Gemini devolvio una respuesta vacia");
         }
 
         return parseRecipeResult(extractModelText(rawResponse));
+    }
+
+    private List<String> getCandidateModels() {
+        List<String> candidates = new java.util.ArrayList<>();
+        if (properties.model() != null && !properties.model().isBlank()) {
+            candidates.add(properties.model().trim());
+        }
+        for (String fallback : FALLBACK_MODELS) {
+            if (!candidates.contains(fallback)) {
+                candidates.add(fallback);
+            }
+        }
+        return candidates;
+    }
+
+    private boolean isNotFoundOrUnsupported(RestClientException e) {
+        if (e instanceof HttpStatusCodeException statusEx) {
+            if (statusEx.getStatusCode().value() == 404) {
+                return true;
+            }
+        }
+        String msg = e.getMessage();
+        if (msg == null) {
+            return false;
+        }
+        String lower = msg.toLowerCase();
+        return lower.contains("404") || lower.contains("not found") || lower.contains("not supported");
+    }
+
+    private boolean isModelNotFoundError(String rawResponse) {
+        try {
+            JsonNode root = objectMapper.readTree(rawResponse);
+            JsonNode error = root.path("error");
+            if (!error.isMissingNode() && !error.isNull()) {
+                int code = error.path("code").asInt(0);
+                String msg = error.path("message").asText("").toLowerCase();
+                return code == 404 || msg.contains("not found") || msg.contains("not supported");
+            }
+        } catch (Exception ignored) {
+        }
+        return false;
     }
 
     private String buildRequestBody(byte[] imageBytes, String mimeType) {
@@ -149,6 +230,9 @@ public class GeminiVisionService {
 
             StringBuilder text = new StringBuilder();
             for (JsonNode part : candidates.get(0).path("content").path("parts")) {
+                if (part.path("thought").asBoolean(false)) {
+                    continue;
+                }
                 text.append(part.path("text").asText(""));
             }
 

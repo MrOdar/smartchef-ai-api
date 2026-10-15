@@ -1,0 +1,76 @@
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: always
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  application:
+    name: smartchef-ai-api
+
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 20MB
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:smartchef}?sslmode=${DB_SSLMODE:prefer}}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 20000
+
+  jpa:
+    hibernate:
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+        format_sql: false
+    show-sql: false
+
+  sql:
+    init:
+      mode: ${SQL_INIT_MODE:never}
+      schema-locations: classpath:schema.sql
+      encoding: UTF-8
+
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+smartchef:
+  jwt:
+    # Clave HS256 en Base64. Sobrescribir SIEMPRE en produccion con JWT_SECRET.
+    secret: ${JWT_SECRET:c21hcnRjaGVmLWxvY2FsLWRldi1zZWNyZXQta2V5LW11c3QtYmUtYXQtbGVhc3QtNjQtYnl0ZXMtbG9uZy1mb3ItaHMyNTYtYWxnb3JpdGht}
+    expiration-ms: 86400000
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    model: gemini-1.5-flash
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    timeout-seconds: 60
+    temperature: 0.4
+  image:
+    max-width: 1024
+    resize-threshold-bytes: 1048576
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+  api-docs:
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: INFO
+    com.smartchef.api: INFO

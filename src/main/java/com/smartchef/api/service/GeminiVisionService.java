@@ -73,8 +73,8 @@ public class GeminiVisionService {
             """;
 
     private static final List<String> FALLBACK_MODELS = List.of(
-            "gemini-3.8-flash",
             "gemini-3.5-flash-lite",
+            "gemini-3.8-flash",
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
             "gemini-2.0-flash",
@@ -86,8 +86,12 @@ public class GeminiVisionService {
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
 
+    /** Tiempo de espera antes de reintentar un descubrimiento que fallo. */
+    private static final long DISCOVERY_RETRY_COOLDOWN_MS = 300_000L;
+
     private volatile List<String> discoveredModels = List.of();
     private volatile String effectiveBaseUrl = null;
+    private volatile long lastDiscoveryFailureAt = 0L;
 
     public GeminiVisionService(RestTemplate geminiRestTemplate,
                                GeminiProperties properties,
@@ -171,11 +175,43 @@ public class GeminiVisionService {
         return parseRecipeResult(extractModelText(rawResponse));
     }
 
-    public synchronized List<String> discoverAvailableModels(StringBuilder logOut) {
-        if (!discoveredModels.isEmpty()) {
-            return new ArrayList<>(discoveredModels);
+    /**
+     * Lista los modelos con generateContent que admite la API key. El resultado
+     * se cachea, y el fallo tambien: si el descubrimiento no encuentra nada, no
+     * se reintenta hasta que pase {@link #DISCOVERY_RETRY_COOLDOWN_MS}, para no
+     * anadir dos llamadas salientes a cada foto cuando Google esta degradado.
+     */
+    public List<String> discoverAvailableModels(StringBuilder logOut) {
+        List<String> cached = discoveredModels;
+        if (!cached.isEmpty()) {
+            return new ArrayList<>(cached);
         }
         if (!properties.hasApiKey()) {
+            return List.of();
+        }
+        if (inDiscoveryCooldown()) {
+            log.debug("Descubrimiento de modelos en pausa tras un fallo reciente; se usa la lista de respaldo");
+            if (logOut != null) {
+                logOut.append("Descubrimiento en pausa tras un fallo reciente.\n");
+            }
+            return List.of();
+        }
+        return runDiscovery(logOut);
+    }
+
+    private boolean inDiscoveryCooldown() {
+        long failedAt = lastDiscoveryFailureAt;
+        return failedAt > 0
+                && (System.currentTimeMillis() - failedAt) < DISCOVERY_RETRY_COOLDOWN_MS;
+    }
+
+    private synchronized List<String> runDiscovery(StringBuilder logOut) {
+        // Otro hilo pudo completar el descubrimiento mientras esperabamos el lock.
+        List<String> cached = discoveredModels;
+        if (!cached.isEmpty()) {
+            return new ArrayList<>(cached);
+        }
+        if (inDiscoveryCooldown()) {
             return List.of();
         }
 
@@ -231,13 +267,16 @@ public class GeminiVisionService {
                     }
                 }
             } catch (HttpStatusCodeException e) {
+                // El resumen solo lleva el estado: el cuerpo de Google puede
+                // contener detalles de la cuenta y no debe salir en la respuesta.
                 if (logOut != null) {
-                    logOut.append(base).append(" HTTP ").append(e.getStatusCode()).append(": ").append(e.getResponseBodyAsString()).append("\n");
+                    logOut.append(base).append(" -> HTTP ").append(e.getStatusCode().value()).append("\n");
                 }
-                log.warn("Fallo al listar modelos desde {}: HTTP {} - {}", base, e.getStatusCode(), e.getResponseBodyAsString());
+                log.warn("Fallo al listar modelos desde {}: HTTP {} - {}",
+                        base, e.getStatusCode(), e.getResponseBodyAsString());
             } catch (Exception e) {
                 if (logOut != null) {
-                    logOut.append(base).append(" error: ").append(e.getMessage()).append("\n");
+                    logOut.append(base).append(" -> sin respuesta utilizable\n");
                 }
                 log.warn("Error al contactar {}: {}", base, e.getMessage());
             }
@@ -246,12 +285,22 @@ public class GeminiVisionService {
         if (!found.isEmpty()) {
             this.effectiveBaseUrl = workingBase;
             this.discoveredModels = found;
+            this.lastDiscoveryFailureAt = 0L;
             return new ArrayList<>(found);
         }
 
+        // Se recuerda el fallo para no repetir el descubrimiento en cada escaneo.
+        this.lastDiscoveryFailureAt = System.currentTimeMillis();
+        log.warn("No se pudo descubrir ningun modelo. Se usara la lista de respaldo y no se reintentara durante {} s",
+                DISCOVERY_RETRY_COOLDOWN_MS / 1000);
         return List.of();
     }
 
+    /**
+     * Comprueba la conectividad con Gemini forzando un redescubrimiento. Solo se
+     * expone a administradores y no devuelve cuerpos de error crudos de Google:
+     * el resumen se limita al base URL y al codigo de estado.
+     */
     public Map<String, Object> diagnose() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("hasApiKey", properties.hasApiKey());
@@ -261,21 +310,23 @@ public class GeminiVisionService {
             return result;
         }
 
-        String key = properties.apiKey();
-        String maskedKey = key.length() > 8
-                ? key.substring(0, 6) + "..." + key.substring(key.length() - 2)
-                : "***";
-        result.put("maskedApiKey", maskedKey);
+        result.put("configuredModel", properties.model());
 
-        StringBuilder logOut = new StringBuilder();
-        this.discoveredModels = List.of();
-        List<String> found = discoverAvailableModels(logOut);
+        StringBuilder summary = new StringBuilder();
+        List<String> found = refreshDiscovery(summary);
 
         result.put("discoveredModels", found);
         result.put("effectiveBaseUrl", effectiveBaseUrl != null ? effectiveBaseUrl : properties.baseUrl());
-        result.put("log", logOut.toString());
+        result.put("attempts", summary.toString().lines().toList());
         result.put("status", found.isEmpty() ? "WARNING" : "OK");
         return result;
+    }
+
+    /** Invalida la cache y vuelve a descubrir, ignorando el periodo de espera. */
+    private synchronized List<String> refreshDiscovery(StringBuilder summary) {
+        this.discoveredModels = List.of();
+        this.lastDiscoveryFailureAt = 0L;
+        return runDiscovery(summary);
     }
 
     private List<String> buildCandidateList(List<String> dynamicModels) {
@@ -298,7 +349,8 @@ public class GeminiVisionService {
 
     private boolean isNotFoundOrUnsupported(RestClientException e) {
         if (e instanceof HttpStatusCodeException statusEx) {
-            if (statusEx.getStatusCode().value() == 404) {
+            int code = statusEx.getStatusCode().value();
+            if (code == 404 || code == 429 || code == 503 || code == 500 || code == 502) {
                 return true;
             }
         }
@@ -307,7 +359,9 @@ public class GeminiVisionService {
             return false;
         }
         String lower = msg.toLowerCase();
-        return lower.contains("404") || lower.contains("not found") || lower.contains("not supported");
+        return lower.contains("404") || lower.contains("not found") || lower.contains("not supported")
+                || lower.contains("429") || lower.contains("high demand") || lower.contains("quota")
+                || lower.contains("rate limit") || lower.contains("overloaded") || lower.contains("503");
     }
 
     private boolean isModelNotFoundError(String rawResponse) {
@@ -317,7 +371,11 @@ public class GeminiVisionService {
             if (!error.isMissingNode() && !error.isNull()) {
                 int code = error.path("code").asInt(0);
                 String msg = error.path("message").asText("").toLowerCase();
-                return code == 404 || msg.contains("not found") || msg.contains("not supported");
+                String status = error.path("status").asText("").toLowerCase();
+                return code == 404 || code == 429 || code == 503
+                        || status.contains("not_found") || status.contains("resource_exhausted") || status.contains("unavailable")
+                        || msg.contains("not found") || msg.contains("not supported")
+                        || msg.contains("high demand") || msg.contains("quota") || msg.contains("rate limit");
             }
         } catch (Exception ignored) {
         }

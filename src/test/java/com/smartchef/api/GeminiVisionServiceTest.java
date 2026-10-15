@@ -15,6 +15,7 @@ import com.smartchef.api.exception.GeminiServiceException;
 import com.smartchef.api.service.GeminiVisionService;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -205,6 +208,98 @@ class GeminiVisionServiceTest {
     }
 
     @Test
+    @DisplayName("No repite el descubrimiento de modelos en cada escaneo cuando falla")
+    void cachesDiscoveryFailureAcrossScans() {
+        // ListModels siempre falla; generateContent responde bien.
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET),
+                any(HttpEntity.class), eq(String.class)))
+                .thenThrow(new ResourceAccessException("ListModels caido"));
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        service.analyzeImage(IMAGE, "image/jpeg");
+        service.analyzeImage(IMAGE, "image/jpeg");
+        service.analyzeImage(IMAGE, "image/jpeg");
+
+        // El descubrimiento se intenta una sola vez. En esa pasada recorre los
+        // base URLs distintos (el configurado coincide con el de v1beta, asi que
+        // quedan 2: v1beta y v1) y despues entra en el periodo de espera: los dos
+        // escaneos siguientes no generan ni una llamada mas a ListModels.
+        org.mockito.Mockito.verify(restTemplate, org.mockito.Mockito.times(2))
+                .exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
+
+        // Las 3 fotos si llegaron a generar recetas.
+        org.mockito.Mockito.verify(restTemplate, org.mockito.Mockito.times(3))
+                .postForObject(anyString(), any(HttpEntity.class), eq(String.class));
+    }
+
+    @Test
+    @DisplayName("Usa los modelos descubiertos y no vuelve a listarlos")
+    void cachesDiscoverySuccess() {
+        String modelsPayload = """
+                {
+                  "models": [
+                    { "name": "models/gemini-3.8-flash",
+                      "supportedGenerationMethods": ["generateContent"] },
+                    { "name": "models/text-embedding-004",
+                      "supportedGenerationMethods": ["embedContent"] }
+                  ]
+                }
+                """;
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET),
+                any(HttpEntity.class), eq(String.class)))
+                .thenReturn(ResponseEntity.ok(modelsPayload));
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        assertThat(service.discoverAvailableModels(null))
+                .containsExactly("gemini-3.8-flash");
+
+        service.analyzeImage(IMAGE, "image/jpeg");
+        service.analyzeImage(IMAGE, "image/jpeg");
+
+        // Una sola llamada a ListModels pese a los dos escaneos posteriores.
+        org.mockito.Mockito.verify(restTemplate, org.mockito.Mockito.times(1))
+                .exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
+    }
+
+    @Test
+    @DisplayName("El diagnostico no expone la API key ni el cuerpo de error de Google")
+    void diagnoseDoesNotLeakSecrets() {
+        String googleError = """
+                {
+                  "error": {
+                    "code": 400,
+                    "message": "API key not valid. Please pass a valid API key.",
+                    "details": [ { "reason": "API_KEY_INVALID", "domain": "googleapis.com" } ]
+                  }
+                }
+                """;
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET),
+                any(HttpEntity.class), eq(String.class)))
+                .thenThrow(HttpClientErrorException.create(
+                        HttpStatus.BAD_REQUEST, "Bad Request",
+                        org.springframework.http.HttpHeaders.EMPTY,
+                        googleError.getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8));
+
+        Map<String, Object> diagnosis = service.diagnose();
+        String serialized = diagnosis.toString();
+
+        assertThat(diagnosis).containsEntry("status", "WARNING");
+        assertThat(diagnosis).doesNotContainKey("maskedApiKey");
+        assertThat(diagnosis).doesNotContainKey("log");
+
+        // Ni la API key ni el detalle crudo de Google salen en la respuesta.
+        assertThat(serialized)
+                .doesNotContain("test-api-key")
+                .doesNotContain("API_KEY_INVALID")
+                .doesNotContain("Please pass a valid API key");
+
+        // Lo que si queda es el estado HTTP, suficiente para diagnosticar.
+        assertThat(serialized).contains("400");
+    }
+
+    @Test
     @DisplayName("Hace fallback al siguiente modelo si el primero retorna 404 Not Found")
     void fallsBackToNextModelWhen404() {
         HttpClientErrorException notFound = HttpClientErrorException.create(
@@ -214,6 +309,24 @@ class GeminiVisionServiceTest {
 
         when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
                 .thenThrow(notFound)
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(result.recipes()).hasSize(1);
+        assertThat(result.recipes().get(0).title()).isEqualTo("Tortilla de tomate");
+    }
+
+    @Test
+    @DisplayName("Hace fallback al siguiente modelo si el primero sufre alta demanda (429/503)")
+    void fallsBackToNextModelWhenHighDemand() {
+        HttpClientErrorException highDemand = HttpClientErrorException.create(
+                HttpStatus.TOO_MANY_REQUESTS, "Too Many Requests", org.springframework.http.HttpHeaders.EMPTY,
+                "{\"error\":{\"code\":429,\"message\":\"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\"status\":\"RESOURCE_EXHAUSTED\"}}".getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8);
+
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(highDemand)
                 .thenReturn(geminiEnvelope(VALID_JSON));
 
         GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");

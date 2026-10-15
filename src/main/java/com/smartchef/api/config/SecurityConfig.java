@@ -21,6 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -60,16 +61,20 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         // Autenticacion
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // El escaneo funciona sin login (user_id nullable) y diagnostico de IA
-                        .requestMatchers("/api/v1/recipes/generate-from-image",
-                                "/api/v1/recipes/diagnostics").permitAll()
+                        // El escaneo funciona sin login (user_id nullable)
+                        .requestMatchers("/api/v1/recipes/generate-from-image").permitAll()
+                        // El diagnostico consulta la API de Google y revela
+                        // configuracion: solo para administradores.
+                        .requestMatchers("/api/v1/recipes/diagnostics")
+                                .hasRole("ADMIN")
                         // Historial y favoritos requieren JWT
                         .requestMatchers("/api/v1/recipes/history",
                                 "/api/v1/recipes/favorites").authenticated()
                         .requestMatchers("/api/v1/recipes/*/favorite").authenticated()
                         .anyRequest().authenticated())
-                .exceptionHandling(handling ->
-                        handling.authenticationEntryPoint(unauthorizedEntryPoint()))
+                .exceptionHandling(handling -> handling
+                        .authenticationEntryPoint(unauthorizedEntryPoint())
+                        .accessDeniedHandler(forbiddenHandler()))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter,
                         org.springframework.security.web.authentication
@@ -106,6 +111,19 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);
         return source;
+    }
+
+    /** Devuelve 403 en JSON UTF-8 cuando falta el rol necesario. */
+    private AccessDeniedHandler forbiddenHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpStatus.FORBIDDEN.value());
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+            objectMapper.writeValue(response.getWriter(), ApiErrorResponse.of(
+                    HttpStatus.FORBIDDEN.value(),
+                    "FORBIDDEN",
+                    "No tienes permisos suficientes para acceder a este recurso"));
+        };
     }
 
     /** Devuelve 401 en JSON UTF-8 en lugar de una redireccion HTML. */

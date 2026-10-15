@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
+import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -112,8 +113,19 @@ public class RecipeController {
 
     @GetMapping("/diagnostics")
     @Operation(summary = "Diagnostico de conexion con Gemini AI",
-            description = "Consulta la API de Google y devuelve los modelos soportados por la API key configurada.")
-    public ResponseEntity<java.util.Map<String, Object>> diagnostics() {
+            description = """
+                    Consulta la API de Google y devuelve los modelos soportados por la API key
+                    configurada. Requiere rol ROLE_ADMIN porque revela detalles de configuracion
+                    y provoca llamadas salientes que consumen cuota.""",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resultado del diagnostico"),
+            @ApiResponse(responseCode = "401", description = "Token ausente o invalido",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "403", description = "El usuario no es administrador",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<Map<String, Object>> diagnostics() {
         return ResponseEntity.ok(recipeService.diagnoseGemini());
     }
 }

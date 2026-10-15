@@ -21,6 +21,7 @@ import com.smartchef.api.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -243,7 +244,7 @@ public class RecipeService {
         return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength);
     }
 
-    public java.util.Map<String, Object> diagnoseGemini() {
+    public Map<String, Object> diagnoseGemini() {
         return geminiVisionService.diagnose();
     }
 }

@@ -19,7 +19,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.smartchef.api.entity.Role;
+import com.smartchef.api.entity.User;
 import com.smartchef.api.exception.GeminiServiceException;
+import com.smartchef.api.repository.UserRepository;
 import com.smartchef.api.service.GeminiVisionService;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +51,9 @@ class SmartChefApiIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @MockBean
     private GeminiVisionService geminiVisionService;
@@ -91,6 +97,26 @@ class SmartChefApiIntegrationTest {
 
     private String bearer(String token) {
         return "Bearer " + token;
+    }
+
+    /** Registra un usuario y lo promueve a ROLE_ADMIN antes de emitir el token. */
+    private String registerAdminAndGetToken(String username, String email) throws Exception {
+        registerAndGetToken(username, email);
+
+        User admin = userRepository.findByUsername(username).orElseThrow();
+        admin.setRole(Role.ROLE_ADMIN);
+        userRepository.save(admin);
+
+        // El token se emite despues del cambio para que lleve el rol correcto.
+        String body = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "username": "%s", "password": "SuperSecreta123" }
+                                """.formatted(username)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        return objectMapper.readTree(body).path("token").asText();
     }
 
     // --- Salud y SPA -------------------------------------------------------
@@ -264,6 +290,16 @@ class SmartChefApiIntegrationTest {
     }
 
     @Test
+    @DisplayName("Un Content-Type incorrecto devuelve 415, no un 500")
+    void rejectsWrongContentTypeWith415() throws Exception {
+        mockMvc.perform(post("/api/v1/recipes/generate-from-image")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.error", is("UNSUPPORTED_MEDIA_TYPE")));
+    }
+
+    @Test
     @DisplayName("Devuelve 503 cuando la IA no encuentra alimentos")
     void returnsServiceUnavailableWhenNoFoodDetected() throws Exception {
         given(geminiVisionService.analyzeImage(any(), anyString()))
@@ -382,6 +418,41 @@ class SmartChefApiIntegrationTest {
                         .header("Authorization", bearer(token)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error", is("NOT_FOUND")));
+    }
+
+    // --- Diagnostico de IA (solo administradores) --------------------------
+
+    @Test
+    @DisplayName("El diagnostico de Gemini rechaza peticiones sin token")
+    void diagnosticsRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/api/v1/recipes/diagnostics"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.error", is("UNAUTHORIZED")));
+    }
+
+    @Test
+    @DisplayName("El diagnostico de Gemini rechaza a un usuario normal con 403")
+    void diagnosticsForbiddenForRegularUser() throws Exception {
+        String token = registerAndGetToken("chef_normal", "normal@smartchef.test");
+
+        mockMvc.perform(get("/api/v1/recipes/diagnostics")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error", is("FORBIDDEN")));
+    }
+
+    @Test
+    @DisplayName("Un administrador si puede consultar el diagnostico")
+    void diagnosticsAllowedForAdmin() throws Exception {
+        given(geminiVisionService.diagnose())
+                .willReturn(java.util.Map.of("status", "OK", "hasApiKey", true));
+
+        String token = registerAdminAndGetToken("chef_admin", "admin@smartchef.test");
+
+        mockMvc.perform(get("/api/v1/recipes/diagnostics")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("OK")));
     }
 
     @Test

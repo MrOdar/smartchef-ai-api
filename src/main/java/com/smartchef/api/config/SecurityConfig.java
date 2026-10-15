@@ -60,8 +60,9 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health").permitAll()
                         // Autenticacion
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        // El escaneo funciona sin login (user_id nullable)
-                        .requestMatchers("/api/v1/recipes/generate-from-image").permitAll()
+                        // El escaneo funciona sin login (user_id nullable) y diagnostico de IA
+                        .requestMatchers("/api/v1/recipes/generate-from-image",
+                                "/api/v1/recipes/diagnostics").permitAll()
                         // Historial y favoritos requieren JWT
                         .requestMatchers("/api/v1/recipes/history",
                                 "/api/v1/recipes/favorites").authenticated()

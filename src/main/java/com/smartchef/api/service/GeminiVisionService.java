@@ -7,13 +7,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.smartchef.api.config.GeminiProperties;
 import com.smartchef.api.dto.GeminiRecipeResult;
 import com.smartchef.api.exception.GeminiServiceException;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
@@ -68,15 +73,21 @@ public class GeminiVisionService {
             """;
 
     private static final List<String> FALLBACK_MODELS = List.of(
+            "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
             "gemini-2.5-flash",
-            "gemini-2.0-flash",
             "gemini-2.5-flash-lite",
+            "gemini-2.0-flash",
+            "gemini-1.5-flash",
             "gemini-1.5-flash-latest"
     );
 
     private final RestTemplate restTemplate;
     private final GeminiProperties properties;
     private final ObjectMapper objectMapper;
+
+    private volatile List<String> discoveredModels = List.of();
+    private volatile String effectiveBaseUrl = null;
 
     public GeminiVisionService(RestTemplate geminiRestTemplate,
                                GeminiProperties properties,
@@ -92,22 +103,29 @@ public class GeminiVisionService {
                     "GEMINI_API_KEY no esta configurada. Define la variable de entorno para usar el analisis con IA.");
         }
 
+        StringBuilder discoveryLog = new StringBuilder();
+        List<String> dynamicModels = discoverAvailableModels(discoveryLog);
+        List<String> candidateModels = buildCandidateList(dynamicModels);
+
         String requestBody = buildRequestBody(imageBytes, mimeType);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        if (properties.apiKey() != null && !properties.apiKey().isBlank()) {
+            headers.set("x-goog-api-key", properties.apiKey());
+        }
         HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
 
-        List<String> candidateModels = getCandidateModels();
+        String base = (effectiveBaseUrl != null) ? effectiveBaseUrl : properties.baseUrl();
         String rawResponse = null;
         Exception lastException = null;
 
         for (int i = 0; i < candidateModels.size(); i++) {
             String targetModel = candidateModels.get(i);
-            String url = properties.generateContentUrl(targetModel);
+            String url = "%s/models/%s:generateContent?key=%s".formatted(base, targetModel, properties.apiKey());
             try {
-                log.info("Invocando Gemini AI con modelo: {}", targetModel);
+                log.info("Invocando Gemini AI ({}) con modelo: {}", base, targetModel);
                 rawResponse = restTemplate.postForObject(url, entity, String.class);
                 if (rawResponse != null && !rawResponse.isBlank()) {
                     if (isModelNotFoundError(rawResponse) && i < candidateModels.size() - 1) {
@@ -123,8 +141,10 @@ public class GeminiVisionService {
                             targetModel, e.getStatusCode(), e.getStatusText());
                     continue;
                 }
+                String detail = extractGoogleErrorMessage(e.getResponseBodyAsString());
                 throw new GeminiServiceException(
-                        "No se pudo contactar al servicio de IA de Gemini: " + e.getMessage(), e);
+                        "No se pudo contactar al servicio de IA de Gemini (%s): %s".formatted(
+                                targetModel, detail != null ? detail : e.getMessage()), e);
             } catch (RestClientException e) {
                 lastException = e;
                 if (isNotFoundOrUnsupported(e) && i < candidateModels.size() - 1) {
@@ -139,8 +159,11 @@ public class GeminiVisionService {
 
         if (rawResponse == null || rawResponse.isBlank()) {
             if (lastException != null) {
+                String detail = (lastException instanceof HttpStatusCodeException httpEx)
+                        ? extractGoogleErrorMessage(httpEx.getResponseBodyAsString())
+                        : lastException.getMessage();
                 throw new GeminiServiceException(
-                        "No se pudo contactar al servicio de IA de Gemini: " + lastException.getMessage(), lastException);
+                        "No se pudo contactar al servicio de IA de Gemini: " + detail, lastException);
             }
             throw new GeminiServiceException("Gemini devolvio una respuesta vacia");
         }
@@ -148,10 +171,122 @@ public class GeminiVisionService {
         return parseRecipeResult(extractModelText(rawResponse));
     }
 
-    private List<String> getCandidateModels() {
-        List<String> candidates = new java.util.ArrayList<>();
+    public synchronized List<String> discoverAvailableModels(StringBuilder logOut) {
+        if (!discoveredModels.isEmpty()) {
+            return new ArrayList<>(discoveredModels);
+        }
+        if (!properties.hasApiKey()) {
+            return List.of();
+        }
+
+        List<String> baseUrls = List.of(
+                properties.baseUrl(),
+                "https://generativelanguage.googleapis.com/v1beta",
+                "https://generativelanguage.googleapis.com/v1"
+        ).stream().distinct().toList();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+        headers.set("x-goog-api-key", properties.apiKey());
+        HttpEntity<?> req = new HttpEntity<>(headers);
+
+        List<String> found = new ArrayList<>();
+        String workingBase = null;
+
+        for (String base : baseUrls) {
+            String listUrl = "%s/models?key=%s".formatted(base, properties.apiKey());
+            try {
+                ResponseEntity<String> resp = restTemplate.exchange(listUrl, HttpMethod.GET, req, String.class);
+                if (resp.getBody() != null && !resp.getBody().isBlank()) {
+                    JsonNode root = objectMapper.readTree(resp.getBody());
+                    JsonNode models = root.path("models");
+                    if (models.isArray()) {
+                        for (JsonNode m : models) {
+                            JsonNode methods = m.path("supportedGenerationMethods");
+                            boolean supportsGen = false;
+                            if (methods.isArray()) {
+                                for (JsonNode method : methods) {
+                                    if ("generateContent".equalsIgnoreCase(method.asText())) {
+                                        supportsGen = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (supportsGen) {
+                                String name = m.path("name").asText();
+                                if (name.startsWith("models/")) {
+                                    name = name.substring("models/".length());
+                                }
+                                found.add(name);
+                            }
+                        }
+                    }
+                    if (!found.isEmpty()) {
+                        workingBase = base;
+                        if (logOut != null) {
+                            logOut.append("Descubiertos en ").append(base).append(": ").append(found).append("\n");
+                        }
+                        log.info("Modelos descubiertos con generateContent en {}: {}", base, found);
+                        break;
+                    }
+                }
+            } catch (HttpStatusCodeException e) {
+                if (logOut != null) {
+                    logOut.append(base).append(" HTTP ").append(e.getStatusCode()).append(": ").append(e.getResponseBodyAsString()).append("\n");
+                }
+                log.warn("Fallo al listar modelos desde {}: HTTP {} - {}", base, e.getStatusCode(), e.getResponseBodyAsString());
+            } catch (Exception e) {
+                if (logOut != null) {
+                    logOut.append(base).append(" error: ").append(e.getMessage()).append("\n");
+                }
+                log.warn("Error al contactar {}: {}", base, e.getMessage());
+            }
+        }
+
+        if (!found.isEmpty()) {
+            this.effectiveBaseUrl = workingBase;
+            this.discoveredModels = found;
+            return new ArrayList<>(found);
+        }
+
+        return List.of();
+    }
+
+    public Map<String, Object> diagnose() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("hasApiKey", properties.hasApiKey());
+        if (!properties.hasApiKey()) {
+            result.put("status", "ERROR");
+            result.put("message", "GEMINI_API_KEY no esta configurada");
+            return result;
+        }
+
+        String key = properties.apiKey();
+        String maskedKey = key.length() > 8
+                ? key.substring(0, 6) + "..." + key.substring(key.length() - 2)
+                : "***";
+        result.put("maskedApiKey", maskedKey);
+
+        StringBuilder logOut = new StringBuilder();
+        this.discoveredModels = List.of();
+        List<String> found = discoverAvailableModels(logOut);
+
+        result.put("discoveredModels", found);
+        result.put("effectiveBaseUrl", effectiveBaseUrl != null ? effectiveBaseUrl : properties.baseUrl());
+        result.put("log", logOut.toString());
+        result.put("status", found.isEmpty() ? "WARNING" : "OK");
+        return result;
+    }
+
+    private List<String> buildCandidateList(List<String> dynamicModels) {
+        List<String> candidates = new ArrayList<>();
         if (properties.model() != null && !properties.model().isBlank()) {
             candidates.add(properties.model().trim());
+        }
+        for (String dyn : dynamicModels) {
+            if (!candidates.contains(dyn)) {
+                candidates.add(dyn);
+            }
         }
         for (String fallback : FALLBACK_MODELS) {
             if (!candidates.contains(fallback)) {
@@ -187,6 +322,21 @@ public class GeminiVisionService {
         } catch (Exception ignored) {
         }
         return false;
+    }
+
+    private String extractGoogleErrorMessage(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return null;
+        }
+        try {
+            JsonNode root = objectMapper.readTree(responseBody);
+            JsonNode messageNode = root.at("/error/message");
+            if (!messageNode.isMissingNode() && !messageNode.isNull()) {
+                return messageNode.asText();
+            }
+        } catch (Exception ignored) {
+        }
+        return responseBody;
     }
 
     private String buildRequestBody(byte[] imageBytes, String mimeType) {

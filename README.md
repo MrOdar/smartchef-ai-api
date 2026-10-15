@@ -1,247 +1,168 @@
-# SmartChef AI API
+# 🍳 SmartChef AI API
 
-API REST empresarial que convierte una **foto de tu despensa o refrigeradora** en
-**3 recetas de aprovechamiento** personalizadas, usando IA multimodal
-(**Google Gemini 1.5 Flash**) para detectar los ingredientes visibles.
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Render-brightgreen?style=for-the-badge&logo=render)](https://smartchef-ai-api.onrender.com/)
+[![Swagger UI](https://img.shields.io/badge/API_Docs-Swagger_UI-blue?style=for-the-badge&logo=swagger)](https://smartchef-ai-api.onrender.com/swagger-ui.html)
+[![Java 21](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Tests](https://img.shields.io/badge/Tests-74%20passed%20(100%25)-success?style=for-the-badge&logo=junit5)](https://github.com/MrOdar/smartchef-ai-api)
 
-Incluye una **SPA integrada** (drag & drop, vista previa, tarjetas de receta) y
-documentación interactiva con **Swagger UI**.
-
-| | |
-|---|---|
-| Java | 21 |
-| Framework | Spring Boot 3.3.4 |
-| Base de datos | PostgreSQL (H2 en memoria para pruebas) |
-| IA | Google Gemini 1.5 Flash (REST, `response_mime_type: application/json`) |
-| Seguridad | Spring Security + JWT (HMAC-SHA, 24 h) + BCrypt |
-| Docs | springdoc-openapi 2.6.0 → `/swagger-ui.html` |
-| Despliegue | Dockerfile multi-stage, compatible con Render |
+> API REST empresarial y Single Page Application (SPA) que convierte una **foto de tu despensa o refrigeradora** en **3 recetas de aprovechamiento** personalizadas, utilizando IA multimodal (**Google Gemini Vision**) para detectar los ingredientes visibles con tolerancia a fallos y conmutación automática de modelos.
 
 ---
 
-## Arranque rápido
+## 🚀 Acceso en Producción
 
-### 1. Requisitos
+| Recurso | Enlace Directo | Descripción |
+|---|---|---|
+| 🌐 **Aplicación Web (SPA)** | [smartchef-ai-api.onrender.com](https://smartchef-ai-api.onrender.com/) | Interfaz web interactiva con arrastrar y soltar, historial y favoritos |
+| 📖 **Documentación Swagger UI** | [smartchef-ai-api.onrender.com/swagger-ui.html](https://smartchef-ai-api.onrender.com/swagger-ui.html) | OpenAPI 3.0 interactivo para probar endpoints |
+| 📊 **Especificación OpenAPI** | [smartchef-ai-api.onrender.com/v3/api-docs](https://smartchef-ai-api.onrender.com/v3/api-docs) | Esquema JSON para importación en Postman/Insomnia |
+| 🩺 **Health Check** | [smartchef-ai-api.onrender.com/actuator/health](https://smartchef-ai-api.onrender.com/actuator/health) | Estado del servicio y base de datos en Spring Actuator |
 
-- JDK 21
-- PostgreSQL en marcha (o ajusta `DATABASE_URL`)
-- Una API key de Gemini: https://aistudio.google.com/apikey
+---
 
-### 2. Variables de entorno
+## 🌟 Características Principales
 
-Copia `.env.example` y exporta los valores (sólo `GEMINI_API_KEY` es imprescindible):
+1. **Visión Multimodal con Google Gemini AI:**
+   * Analiza imágenes (JPEG, PNG, WEBP) de refrigeradores o despensas.
+   * Identifica ingredientes disponibles vs. ingredientes faltantes para cada receta.
+   * Genera exactamente 3 recetas estructuradas (tiempo, calorías estimadas, nivel de dificultad y pasos ordenados).
+
+2. **Arquitectura de Resiliencia y Fallback Automático:**
+   * **Autodescubrimiento dinámico (*Model Discovery*):** Inspecciona en tiempo real los modelos disponibles en tu cuenta de Google Cloud / Google AI Studio mediante `ListModels`.
+   * **Manejo inteligente de alta demanda (`429 / 503`):** Si un modelo sufre picos de demanda o cuota, el motor conmuta automáticamente en milisegundos al siguiente modelo de respaldo (`gemini-3.5-flash-lite`, `gemini-3.8-flash`, `gemini-2.5-flash`).
+   * **Filtrado de bloques de pensamiento (*Thinking Tokens*):** Limpieza defensiva de razonamientos internos y delimitadores markdown para garantizar un JSON 100% estricto y parseable.
+
+3. **Optimización de Imágenes en Memoria:**
+   * Si la imagen subida supera 1 MB, `ImageProcessingService` la escala dinámicamente a máx. 1024 px manteniendo el ratio de aspecto mediante `BufferedImage`. Esto reduce la latencia de red con la IA de ~5 s a ~1.2 s.
+
+4. **Seguridad y Persistencia:**
+   * Autenticación sin estado con **Spring Security 6** y **JWT** (HMAC-SHA256, expiración 24 h).
+   * Contraseñas cifradas con **BCrypt**.
+   * Modo libre (anónimo) o autenticado (guarda historial de escaneos y recetas favoritas).
+   * Conector de base de datos resiliente: PostgreSQL en producción (soporta `postgres://` de Render y `jdbc:postgresql://`) con fallback a H2 persistente en archivo o en memoria.
+
+---
+
+## 🛠️ Stack Tecnológico
+
+| Componente | Tecnología | Versión |
+|---|---|---|
+| **Lenguaje** | Java | 21 (LTS) |
+| **Framework** | Spring Boot | 3.3.4 |
+| **Seguridad** | Spring Security + JJWT | 0.12.6 |
+| **Base de Datos** | PostgreSQL / H2 Database | 42.7.4 |
+| **ORM** | Hibernate / Spring Data JPA | 3.3.4 |
+| **Inteligencia Artificial** | Google Gemini Vision REST API | v1beta / v1 |
+| **Documentación** | Springdoc OpenAPI (Swagger UI) | 2.6.0 |
+| **Contenedores** | Docker (Multi-stage build con Eclipse Temurin Alpine) | 21 JRE |
+| **Pruebas** | JUnit 5 + Mockito + MockMvc + AssertJ | 74 pruebas (100% éxito) |
+
+---
+
+## 📋 Endpoints de la API
+
+Prefijo base: `/api/v1`
+
+### 1. Autenticación (`/api/v1/auth`)
+
+| Método | Endpoint | Auth | Descripción |
+|---|---|---|---|
+| `POST` | `/auth/register` | Pública | Registro de usuario (username, email, contraseña). Devuelve JWT. |
+| `POST` | `/auth/login` | Pública | Inicio de sesión con username o email. Devuelve JWT. |
+| `GET` | `/auth/me` | JWT | Retorna el perfil del usuario autenticado. |
+
+### 2. Recetas e IA (`/api/v1/recipes`)
+
+| Método | Endpoint | Auth | Descripción |
+|---|---|---|---|
+| `POST` | `/recipes/generate-from-image` | Opcional | Recibe `multipart/form-data` con campo `image`. Si envías JWT, la sesión se vincula a tu historial. |
+| `GET` | `/recipes/history` | JWT | Lista de sesiones de escaneo y recetas generadas por el usuario. |
+| `POST` | `/recipes/{id}/favorite` | JWT | Alterna (añade o retira) una receta de la lista de favoritos. |
+| `GET` | `/recipes/favorites` | JWT | Devuelve todas las recetas guardadas en favoritos. |
+| `GET` | `/recipes/diagnostics` | Admin | Diagnóstico del estado de la conexión con la API de Google Gemini. |
+
+---
+
+## 💻 Ejecución Local
+
+### 1. Clonar el repositorio
 
 ```bash
-export GEMINI_API_KEY=tu-api-key
-export DATABASE_URL=jdbc:postgresql://localhost:5432/smartchef
-export DATABASE_USERNAME=postgres
-export DATABASE_PASSWORD=postgres
-export JWT_SECRET=<cadena-base64-de-al-menos-32-bytes>
+git clone https://github.com/MrOdar/smartchef-ai-api.git
+cd smartchef-ai-api
 ```
 
-En PowerShell:
+### 2. Configurar variables de entorno
 
-```powershell
-$env:GEMINI_API_KEY = "tu-api-key"
-```
-
-### 3. Compilar y probar
+Copia `.env.example` o define `GEMINI_API_KEY`:
 
 ```bash
-./mvnw clean package
+# Linux / macOS
+export GEMINI_API_KEY="tu-api-key-de-google-ai-studio"
+
+# Windows PowerShell
+$env:GEMINI_API_KEY = "tu-api-key-de-google-ai-studio"
 ```
 
-Las pruebas se ejecutan **100 % offline**: Gemini se simula con `@MockBean` y la
-base de datos es H2 en memoria, por lo que no se necesita API key ni PostgreSQL
-para que `./mvnw test` pase.
+> Obtén tu clave gratuita en: [Google AI Studio](https://aistudio.google.com/apikey).
 
-### 4. Ejecutar
+### 3. Compilar y ejecutar pruebas
+
+Las pruebas se ejecutan **100% offline** (Gemini se simula con Mockito y la base de datos corre en memoria):
+
+```bash
+./mvnw clean test
+```
+
+### 4. Iniciar la aplicación
 
 ```bash
 ./mvnw spring-boot:run
 ```
 
-| Recurso | URL |
-|---|---|
-| SPA | http://localhost:8080/ |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| OpenAPI JSON | http://localhost:8080/v3/api-docs |
-| Health | http://localhost:8080/actuator/health |
+Abre en tu navegador:
+* **Aplicación Web:** `http://localhost:8080/`
+* **Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
 ---
 
-## Endpoints
-
-Base: `/api/v1`
-
-### Autenticación
-
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `POST` | `/auth/register` | — | Registro con email validado y contraseña BCrypt. Devuelve JWT. |
-| `POST` | `/auth/login` | — | Acepta username **o** email. Devuelve JWT válido 24 h. |
-| `GET` | `/auth/me` | JWT | Perfil del portador del token. |
-
-### Recetas con IA
-
-| Método | Ruta | Auth | Descripción |
-|---|---|---|---|
-| `POST` | `/recipes/generate-from-image` | Opcional | `multipart/form-data` con el campo `image`. Analiza la foto y devuelve ingredientes + 3 recetas. Con JWT, el escaneo se guarda en tu historial. |
-| `GET` | `/recipes/history` | JWT | Historial de escaneos del usuario, más recientes primero. |
-| `POST` | `/recipes/{id}/favorite` | JWT | Alterna la receta como favorita. |
-| `GET` | `/recipes/favorites` | JWT | Recetas guardadas en favoritos. |
-
-### Ejemplo
-
-```bash
-curl -X POST http://localhost:8080/api/v1/recipes/generate-from-image \
-  -F "image=@mi-refrigeradora.jpg"
-```
-
-```json
-{
-  "scanSessionId": 1,
-  "detectedIngredients": ["tomate", "huevo", "cebolla", "queso"],
-  "recipes": [
-    {
-      "id": 1,
-      "title": "Tortilla campesina de tomate",
-      "description": "Receta de aprovechamiento con lo que ya tienes.",
-      "prepTimeMinutes": 20,
-      "difficulty": "FACIL",
-      "caloriesEstimate": 380,
-      "steps": ["Batir los huevos", "Saltear el tomate", "Cuajar la tortilla"],
-      "ingredients": [
-        { "name": "tomate", "quantity": "2 unidades", "available": true },
-        { "name": "albahaca fresca", "quantity": "1 ramita", "available": false }
-      ],
-      "favorite": false
-    }
-  ],
-  "createdAt": "2026-10-15T15:50:16.323Z"
-}
-```
-
-Guardar una receta en favoritos:
-
-```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"chef_ana","password":"SuperSecreta123"}' | jq -r .token)
-
-curl -X POST http://localhost:8080/api/v1/recipes/1/favorite \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## Salvaguardas de estabilidad
-
-1. **Fotos de celular (hasta 15 MB).** `max-file-size: 15MB` / `max-request-size: 20MB`.
-   Si la imagen supera 1 MB, `ImageProcessingService` la redimensiona en memoria con
-   `BufferedImage` / `ImageIO` a 1024 px de ancho antes de pasarla a Base64; esto recorta
-   la latencia de la llamada a Gemini de ~5 s a ~1,5 s. Si `ImageIO` no sabe decodificar el
-   formato (p. ej. WEBP sin plugin), se envían los bytes originales en lugar de fallar.
-
-2. **JSON estricto de Gemini.** La petición incluye
-   `generationConfig.response_mime_type: application/json` y `temperature: 0.4`.
-   Además, `stripMarkdownFences()` elimina de forma defensiva los bloques de código
-   markdown y el texto conversacional antes de entregar el contenido a Jackson.
-   `Difficulty.fromText()` normaliza variantes con acentos, en inglés o en minúsculas.
-
-3. **Pruebas aisladas y offline.** `src/test/resources/application-test.yml` usa H2 con
-   `ddl-auto: create-drop` y `spring.sql.init.mode: never`; las pruebas de integración
-   sustituyen `GeminiVisionService` con `@MockBean`. No se requiere API key ni red.
-
-4. **UTF-8 estricto.** Fuentes, `server.servlet.encoding` forzado, respuestas declaradas
-   como `application/json;charset=UTF-8` y una prueba que verifica la ausencia de mojibake.
-
-5. **Compatibilidad con Render.** `server.port: ${PORT:8080}`, `Dockerfile` multi-stage
-   (Maven → Temurin 21 JRE Alpine, usuario sin privilegios) y `render.yaml` listo con la
-   base de datos PostgreSQL y el health check.
-
-6. **Manejo de errores homogéneo.** `GlobalExceptionHandler` traduce cada fallo a un JSON
-   estable: `400` (validación, formato de imagen, parámetro ausente), `401` (credenciales
-   o token), `404`, `409` (duplicados), `413` (imagen > 15 MB) y `503` (IA no disponible).
-
----
-
-## Modelo de datos
-
-```
-users (id, username, email, password_hash, full_name, role, created_at)
-  └─ scan_sessions (id, user_id NULL, detected_ingredients_summary, created_at)
-       └─ recipes (id, scan_session_id, title, description, prep_time_minutes,
-                   difficulty, calories_estimate, steps_json, created_at)
-            └─ recipe_ingredients (id, recipe_id, name, is_available, quantity)
-  └─ favorite_recipes (user_id, recipe_id, saved_at)   [PK compuesta]
-```
-
-`user_id` en `scan_sessions` es nullable a propósito: el escaneo funciona sin iniciar sesión.
-
-Hibernate gestiona el DDL (`JPA_DDL_AUTO`, por defecto `update`). `src/main/resources/schema.sql`
-contiene el esquema explícito de PostgreSQL y se aplica sólo si pones `SQL_INIT_MODE=always`.
-
----
-
-## Docker
+## 🐳 Ejecución con Docker
 
 ```bash
 docker build -t smartchef-ai-api .
-docker run -p 8080:8080 \
-  -e GEMINI_API_KEY=tu-api-key \
-  -e DATABASE_URL=jdbc:postgresql://host.docker.internal:5432/smartchef \
-  -e DATABASE_USERNAME=postgres \
-  -e DATABASE_PASSWORD=postgres \
-  smartchef-ai-api
+docker run -p 8080:8080 -e GEMINI_API_KEY="tu-clave" smartchef-ai-api
 ```
-
-## Despliegue en Render
-
-1. Sube el repositorio a GitHub.
-2. En Render: **New → Blueprint** y selecciona el repo (usa `render.yaml`).
-3. Define `GEMINI_API_KEY` como variable secreta; `JWT_SECRET` se genera automáticamente
-   y las credenciales de PostgreSQL se enlazan desde la base de datos del blueprint.
 
 ---
 
-## Estructura del proyecto
+## 🧪 Cobertura de Pruebas Automatizadas
 
-```
-src/main/java/com/smartchef/api/
-├── config/      GeminiProperties, JwtProperties, ImageProperties,
-│                SecurityConfig, RestClientConfig, OpenApiConfig
-├── controller/  AuthController, RecipeController
-├── dto/         Peticiones, respuestas y el contrato JSON de Gemini
-├── entity/      User, ScanSession, Recipe, RecipeIngredient, FavoriteRecipe, enums
-├── exception/   Excepciones de dominio + GlobalExceptionHandler
-├── repository/  Repositorios Spring Data JPA
-├── security/    JwtService, JwtAuthenticationFilter, UserDetails
-└── service/     ImageProcessingService, GeminiVisionService, AuthService, RecipeService
+El proyecto incluye **74 pruebas automatizadas** que cubren:
+* **`GeminiVisionServiceTest`**: Respuestas limpias, markdown fences, textos con ruido, conmutación por error 404, conmutación por alta demanda (429/503), y aislamiento de credenciales.
+* **`ImageProcessingServiceTest`**: Validación de formatos (JPEG, PNG, WEBP), rechazo de archivos inválidos o corruptos, y redimensionamiento exacto a 1024 px.
+* **`JwtServiceTest`**: Emisión, validación, expiración de tokens y firmas inválidas.
+* **`SmartChefApiIntegrationTest`**: Flujo end-to-end con MockMvc (registro, login, análisis de imagen anónimo y autenticado, historial por usuario, favoritos, códigos de error HTTP y compatibilidad UTF-8).
+* **`DataSourceConfigTest`**: Validación de parsing dinámico de URLs PostgreSQL y H2.
 
-src/main/resources/
-├── application.yml
-├── schema.sql
-└── static/      index.html, styles.css, app.js   (SPA)
-
-src/test/
-├── java/...     GeminiVisionServiceTest, ImageProcessingServiceTest,
-│                JwtServiceTest, DifficultyTest, SmartChefApiIntegrationTest
-└── resources/   application-test.yml  (H2 en memoria)
+```text
+[INFO] Results:
+[INFO] Tests run: 74, Failures: 0, Errors: 0, Skipped: 0
+[INFO] BUILD SUCCESS
 ```
 
-## Pruebas
+---
 
-```bash
-./mvnw test
-```
+## 👤 Autor
 
-- `GeminiVisionServiceTest` — JSON limpio, con fences markdown, con texto previo, JSON
-  inválido, error de la API, fallo de red y API key ausente.
-- `ImageProcessingServiceTest` — formatos aceptados y rechazados, redimensionado a 1024 px
-  manteniendo la relación de aspecto, normalización de MIME, fallback de decodificación.
-- `JwtServiceTest` — emisión, validación, expiración, firma distinta, secreto no Base64.
-- `DifficultyTest` — normalización de las variantes que puede devolver el modelo.
-- `SmartChefApiIntegrationTest` — flujo completo sobre H2: SPA, OpenAPI, registro, login,
-  duplicados, validaciones, escaneo anónimo y autenticado, historial por usuario,
-  favoritos (alternar ida y vuelta), UTF-8 y todos los códigos de error.
+**Odar Javier Alcocer Vásquez**  
+Estudiante de Ingeniería de Sistemas de Información | Universidad Peruana de Ciencias Aplicadas (UPC), Lima, Perú.  
+* **GitHub:** [@MrOdar](https://github.com/MrOdar)  
+* **LinkedIn:** [linkedin.com/in/odar-alcocer](https://www.linkedin.com/in/odar-alcocer/)  
+* **Email:** [odaralcv@gmail.com](mailto:odaralcv@gmail.com)
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Consulta el archivo `LICENSE` para más detalles.

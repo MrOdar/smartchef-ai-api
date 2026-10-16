@@ -280,7 +280,9 @@ public class GeminiVisionService {
                                 if (name.startsWith("models/")) {
                                     name = name.substring("models/".length());
                                 }
-                                found.add(name);
+                                if (isVisionCapableModel(name)) {
+                                    found.add(name);
+                                }
                             }
                         }
                     }
@@ -289,7 +291,7 @@ public class GeminiVisionService {
                         if (logOut != null) {
                             logOut.append("Descubiertos en ").append(base).append(": ").append(found).append("\n");
                         }
-                        log.info("Modelos descubiertos con generateContent en {}: {}", base, found);
+                        log.info("Modelos descubiertos con soporte de vision en {}: {}", base, found);
                         break;
                     }
                 }
@@ -358,26 +360,42 @@ public class GeminiVisionService {
 
     private List<String> buildCandidateList(List<String> dynamicModels) {
         List<String> candidates = new ArrayList<>();
-        if (properties.model() != null && !properties.model().isBlank()) {
+        if (properties.model() != null && !properties.model().isBlank() && isVisionCapableModel(properties.model())) {
             candidates.add(properties.model().trim());
-        }
-        for (String dyn : dynamicModels) {
-            if (!candidates.contains(dyn)) {
-                candidates.add(dyn);
-            }
         }
         for (String fallback : FALLBACK_MODELS) {
             if (!candidates.contains(fallback)) {
                 candidates.add(fallback);
             }
         }
+        for (String dyn : dynamicModels) {
+            if (isVisionCapableModel(dyn) && !candidates.contains(dyn)) {
+                candidates.add(dyn);
+            }
+        }
         return candidates;
+    }
+
+    static boolean isVisionCapableModel(String modelName) {
+        if (modelName == null || modelName.isBlank()) {
+            return false;
+        }
+        String lower = modelName.toLowerCase();
+        if (lower.contains("tts") || lower.contains("audio") || lower.contains("embed")
+                || lower.contains("imagen") || lower.contains("realtime") || lower.contains("speech")) {
+            return false;
+        }
+        return lower.contains("flash") || lower.contains("pro") || lower.contains("gemini");
     }
 
     private boolean isNotFoundOrUnsupported(RestClientException e) {
         if (e instanceof HttpStatusCodeException statusEx) {
             int code = statusEx.getStatusCode().value();
             if (code == 404 || code == 429 || code == 503 || code == 500 || code == 502) {
+                return true;
+            }
+            String body = statusEx.getResponseBodyAsString().toLowerCase();
+            if (code == 400 && (body.contains("modality") || body.contains("not enabled") || body.contains("image input"))) {
                 return true;
             }
         }
@@ -388,7 +406,8 @@ public class GeminiVisionService {
         String lower = msg.toLowerCase();
         return lower.contains("404") || lower.contains("not found") || lower.contains("not supported")
                 || lower.contains("429") || lower.contains("high demand") || lower.contains("quota")
-                || lower.contains("rate limit") || lower.contains("overloaded") || lower.contains("503");
+                || lower.contains("rate limit") || lower.contains("overloaded") || lower.contains("503")
+                || lower.contains("modality") || lower.contains("not enabled") || lower.contains("image input");
     }
 
     private boolean isModelNotFoundError(String rawResponse) {
@@ -400,9 +419,11 @@ public class GeminiVisionService {
                 String msg = error.path("message").asText("").toLowerCase();
                 String status = error.path("status").asText("").toLowerCase();
                 return code == 404 || code == 429 || code == 503
+                        || (code == 400 && (msg.contains("modality") || msg.contains("not enabled")))
                         || status.contains("not_found") || status.contains("resource_exhausted") || status.contains("unavailable")
                         || msg.contains("not found") || msg.contains("not supported")
-                        || msg.contains("high demand") || msg.contains("quota") || msg.contains("rate limit");
+                        || msg.contains("high demand") || msg.contains("quota") || msg.contains("rate limit")
+                        || msg.contains("modality") || msg.contains("not enabled");
             }
         } catch (Exception ignored) {
         }

@@ -416,4 +416,45 @@ class GeminiVisionServiceTest {
         assertThat(result.recipes()).hasSize(1);
         assertThat(result.recipes().get(0).title()).isEqualTo("Tortilla de tomate");
     }
+
+    @Test
+    @DisplayName("Hace fallback al siguiente modelo si el modelo no soporta modalidad de imagen (400 modality not enabled)")
+    void fallsBackToNextModelWhenModalityNotEnabled() {
+        HttpClientErrorException modalityError = HttpClientErrorException.create(
+                HttpStatus.BAD_REQUEST, "Bad Request", org.springframework.http.HttpHeaders.EMPTY,
+                "{\"error\":{\"code\":400,\"message\":\"Image input modality is not enabled for models/gemini-2.5-flash-preview-tts\",\"status\":\"INVALID_ARGUMENT\"}}".getBytes(StandardCharsets.UTF_8),
+                StandardCharsets.UTF_8);
+
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenThrow(modalityError)
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(result.recipes()).hasSize(1);
+        assertThat(result.recipes().get(0).title()).isEqualTo("Tortilla de tomate");
+    }
+
+    @Test
+    @DisplayName("El descubrimiento de modelos ignora modelos TTS, audio o embeddings")
+    void discoveryFiltersOutNonVisionModels() {
+        String modelsPayload = """
+                {
+                  "models": [
+                    { "name": "models/gemini-2.5-flash-preview-tts",
+                      "supportedGenerationMethods": ["generateContent"] },
+                    { "name": "models/gemini-3.8-flash",
+                      "supportedGenerationMethods": ["generateContent"] },
+                    { "name": "models/text-embedding-004",
+                      "supportedGenerationMethods": ["embedContent"] }
+                  ]
+                }
+                """;
+        when(restTemplate.exchange(anyString(), eq(HttpMethod.GET),
+                any(HttpEntity.class), eq(String.class)))
+                .thenReturn(ResponseEntity.ok(modelsPayload));
+
+        assertThat(service.discoverAvailableModels(null))
+                .containsExactly("gemini-3.8-flash");
+    }
 }

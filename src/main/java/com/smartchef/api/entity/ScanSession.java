@@ -33,6 +33,15 @@ public class ScanSession {
     @Column(name = "detected_ingredients_summary", columnDefinition = "TEXT")
     private String detectedIngredientsSummary;
 
+    /**
+     * Marca la sesion de demostracion precalculada. Es Boolean (nullable) a
+     * proposito: con ddl-auto=update, anadir una columna NOT NULL a una tabla
+     * que ya tiene filas falla en PostgreSQL por no haber valor por defecto.
+     * Las sesiones anteriores quedan en NULL, que se trata como "no demo".
+     */
+    @Column(name = "demo")
+    private Boolean demo;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -66,6 +75,14 @@ public class ScanSession {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public boolean isDemo() {
+        return Boolean.TRUE.equals(demo);
+    }
+
+    public void setDemo(Boolean demo) {
+        this.demo = demo;
     }
 
     public String getDetectedIngredientsSummary() {

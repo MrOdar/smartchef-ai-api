@@ -12,6 +12,7 @@ public record RecipeResponse(
         String difficulty,
         Integer caloriesEstimate,
         List<String> steps,
+        String chefTip,
         List<IngredientResponse> ingredients,
         Instant createdAt,
         Boolean favorite) {
@@ -25,6 +26,7 @@ public record RecipeResponse(
                 recipe.getDifficulty() == null ? null : recipe.getDifficulty().name(),
                 recipe.getCaloriesEstimate(),
                 steps,
+                recipe.getChefTip(),
                 recipe.getIngredients().stream().map(IngredientResponse::from).toList(),
                 recipe.getCreatedAt(),
                 favorite);

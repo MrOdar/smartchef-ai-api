@@ -7,6 +7,25 @@
     var ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     var TOKEN_KEY = 'smartchef.token';
     var USER_KEY = 'smartchef.user';
+    var DEMO_IMAGE = 'assets/demo-fridge.jpg';
+
+    /**
+     * Unica URL fija del proyecto, y es deliberada: el QR se genera siempre con
+     * la direccion viva del navegador, pero en localhost esa direccion no sirve
+     * de nada en un telefono (resolveria su propio localhost). Solo en ese caso
+     * se recurre a la direccion publica de produccion.
+     */
+    var PRODUCTION_URL = 'https://smartchef-ai-api.onrender.com/';
+
+    /** Mensajes rotativos mientras la IA analiza, para amenizar la espera. */
+    var LOADER_MESSAGES = [
+        'Detectando alimentos en la fotografia...',
+        'Identificando ingredientes frescos y de despensa...',
+        'Buscando combinaciones que aprovechen lo que tienes...',
+        'Calculando tiempos de coccion y calorias...',
+        'Redactando los pasos y el consejo del chef...',
+        'Dando los ultimos retoques a tus 3 recetas...'
+    ];
 
     var state = {
         file: null,
@@ -236,6 +255,27 @@
 
     // --- Analisis con IA --------------------------------------------------
 
+    var loaderTimer = null;
+
+    function startLoader() {
+        var sub = $('loader-sub');
+        var i = 0;
+        sub.textContent = LOADER_MESSAGES[0];
+        show($('loader'));
+
+        clearInterval(loaderTimer);
+        loaderTimer = setInterval(function () {
+            i = (i + 1) % LOADER_MESSAGES.length;
+            sub.textContent = LOADER_MESSAGES[i];
+        }, 2600);
+    }
+
+    function stopLoader() {
+        clearInterval(loaderTimer);
+        loaderTimer = null;
+        hide($('loader'));
+    }
+
     function analyze() {
         if (!state.file) {
             return;
@@ -243,7 +283,7 @@
 
         clearAlert();
         hide($('results'));
-        show($('loader'));
+        startLoader();
         $('btn-analyze').disabled = true;
 
         var form = new FormData();
@@ -258,9 +298,68 @@
                 showAlert(error.message);
             })
             .then(function () {
-                hide($('loader'));
+                stopLoader();
                 $('btn-analyze').disabled = false;
             });
+    }
+
+    // --- Demo instantanea --------------------------------------------------
+
+    /**
+     * Carga la foto de ejemplo en la vista previa y pide el resultado
+     * precalculado. No consume cuota de Gemini y responde en milisegundos.
+     */
+    function runDemo() {
+        clearAlert();
+        hide($('results'));
+
+        var button = $('btn-hero-demo');
+        button.disabled = true;
+
+        showDemoPreview();
+
+        request('/recipes/demo')
+            .then(function (data) {
+                state.lastScan = data;
+                state.demoLoaded = true;
+                renderScanResult(data);
+                toast('Resultado de ejemplo cargado al instante');
+            })
+            .catch(function (error) {
+                showAlert('No se pudo cargar la demostracion: ' + error.message);
+            })
+            .then(function () {
+                button.disabled = false;
+            });
+    }
+
+    /** Muestra la foto demo en el dropzone, como si el usuario la hubiera subido. */
+    function showDemoPreview() {
+        state.file = null;
+        $('preview-img').src = DEMO_IMAGE;
+        $('preview-name').textContent = 'demo-fridge.jpg';
+        $('preview-size').textContent = 'foto de ejemplo';
+        hide($('dropzone-empty'));
+        show($('preview'));
+        $('dropzone').classList.add('has-file');
+        // Sin fichero propio no hay nada que reanalizar: la demo ya trae resultado.
+        $('btn-analyze').disabled = true;
+        $('btn-reset').hidden = false;
+    }
+
+    /**
+     * Lleva al usuario a la zona de carga. No se abre el selector de archivos
+     * por codigo: tras un setTimeout se pierde el contexto de gesto y varios
+     * navegadores bloquean el dialogo, asi que el usuario pulsa la zona.
+     */
+    function scrollToDropzone() {
+        var dropzone = $('dropzone');
+        dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dropzone.focus({ preventScroll: true });
+        dropzone.classList.add('is-highlighted');
+        setTimeout(function () {
+            dropzone.classList.remove('is-highlighted');
+        }, 1400);
     }
 
     function renderScanResult(data) {
@@ -311,6 +410,17 @@
 
         var isFavorite = recipe.favorite === true;
 
+        // El tip solo se pinta si existe: las recetas anteriores a la Fase 2
+        // no lo tienen y no deben mostrar un recuadro vacio.
+        var tip = (recipe.chefTip && String(recipe.chefTip).trim())
+            ? '<div class="cheftip">'
+              + '<span class="cheftip__icon" aria-hidden="true">&#128161;</span>'
+              + '<div class="cheftip__body">'
+              + '<span class="cheftip__label">Tip del Chef</span>'
+              + '<p class="cheftip__text">' + escapeHtml(recipe.chefTip) + '</p>'
+              + '</div></div>'
+            : '';
+
         return '<article class="card">'
             + '<h3 class="card__title">' + escapeHtml(recipe.title) + '</h3>'
             + (recipe.description
@@ -322,6 +432,7 @@
             + (steps
                 ? '<div class="card__block"><h4>Preparacion</h4>'
                   + '<ol class="steps">' + steps + '</ol></div>' : '')
+            + tip
             + '<div class="card__footer">'
             + '<button class="btn btn--fav' + (isFavorite ? ' is-on' : '') + '" type="button"'
             + ' data-favorite-id="' + escapeHtml(recipe.id) + '">'
@@ -448,6 +559,55 @@
             if (frame.getAttribute('src') !== '/swagger-ui.html') {
                 frame.setAttribute('src', '/swagger-ui.html');
             }
+        } else if (id === 'qr-modal') {
+            renderQr();
+        }
+    }
+
+    // --- Codigo QR ---------------------------------------------------------
+
+    /** true si la direccion actual no es alcanzable desde otro dispositivo. */
+    function isLocalAddress(hostname) {
+        return hostname === 'localhost'
+            || hostname === '127.0.0.1'
+            || hostname === '::1'
+            || hostname === ''
+            || /^192\.168\./.test(hostname)
+            || /^10\./.test(hostname)
+            || /^172\.(1[6-9]|2\d|3[01])\./.test(hostname)
+            || /\.local$/.test(hostname);
+    }
+
+    /**
+     * Genera el QR con la URL viva del navegador. Si estamos en local, esa URL
+     * no sirve en un telefono, asi que se codifica la direccion publica y se
+     * avisa claramente de la sustitucion.
+     */
+    function renderQr() {
+        var canvas = $('qr-canvas');
+        var note = $('qr-note');
+
+        var liveUrl = window.location.origin + window.location.pathname;
+        var local = isLocalAddress(window.location.hostname);
+        var target = local ? PRODUCTION_URL : liveUrl;
+
+        $('qr-url').textContent = target;
+
+        if (local) {
+            note.innerHTML = 'Estas en <strong>' + escapeHtml(window.location.host) + '</strong>, '
+                + 'una direccion que tu telefono no puede abrir. El codigo apunta a la '
+                + 'version publicada.';
+            show(note);
+        } else {
+            hide(note);
+        }
+
+        try {
+            canvas.innerHTML = QR.svg(target, { ecc: 'M', border: 2 });
+        } catch (error) {
+            canvas.innerHTML = '';
+            note.textContent = 'No se pudo generar el codigo QR: ' + error.message;
+            show(note);
         }
     }
 
@@ -547,6 +707,13 @@
             openModal('docs-modal');
         });
 
+        // Botones del hero
+        $('btn-hero-upload').addEventListener('click', scrollToDropzone);
+        $('btn-hero-demo').addEventListener('click', runDemo);
+        $('btn-hero-qr').addEventListener('click', function () {
+            openModal('qr-modal');
+        });
+
         $('btn-auth').addEventListener('click', function () {
             if (isLoggedIn()) {
                 logout(false);
@@ -578,6 +745,7 @@
             if (event.key === 'Escape') {
                 closeModal('auth-modal');
                 closeModal('docs-modal');
+                closeModal('qr-modal');
             }
         });
 
@@ -616,8 +784,20 @@
 
     // --- Arranque --------------------------------------------------------
 
+    /**
+     * El boton de QR solo tiene sentido en escritorio: si ya estas en el movil,
+     * no necesitas escanear nada para abrir la web aqui.
+     */
+    function isHandheld() {
+        return window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         bindEvents();
         renderSession();
+
+        if (!isHandheld()) {
+            $('btn-hero-qr').hidden = false;
+        }
     });
 })();

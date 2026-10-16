@@ -1,8 +1,10 @@
 /* SmartChef AI - hoja de estilos de la SPA */
 
 :root {
-    --bg: #f6f7f4;
+    --bg: #f7f6f1;
     --bg-elev: #ffffff;
+    --cream: #f4f1e6;
+    --cream-deep: #ece7d7;
     --ink: #1b2a21;
     --ink-soft: #5c6b61;
     --ink-faint: #8d9a92;
@@ -171,9 +173,21 @@ a {
     color: var(--green-dark);
 }
 
+.btn--soft {
+    background: var(--bg-elev);
+    border-color: #d9d2bd;
+    color: var(--ink);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn--soft:hover:not(:disabled) {
+    border-color: var(--green);
+    color: var(--green-dark);
+}
+
 .btn--lg {
-    padding: 13px 30px;
-    font-size: 1.02rem;
+    padding: 13px 26px;
+    font-size: 1rem;
 }
 
 .btn--block {
@@ -222,21 +236,81 @@ a {
 }
 
 .hero {
+    position: relative;
     text-align: center;
-    margin-bottom: 26px;
+    margin: 0 0 34px;
+    padding: 46px 24px 40px;
+    border-radius: 22px;
+    background:
+        radial-gradient(120% 140% at 50% -20%, #ffffff 0%, var(--cream) 46%, var(--cream-deep) 100%);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+/* Halo esmeralda muy tenue, para que no canse la vista. */
+.hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -10% -60% -10%;
+    height: 220px;
+    background: radial-gradient(50% 100% at 50% 100%, rgba(31, 157, 87, .13), transparent 70%);
+    pointer-events: none;
+}
+
+.hero__eyebrow {
+    margin: 0 0 12px;
+    font-size: .76rem;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--green);
 }
 
 .hero__title {
-    font-size: clamp(1.75rem, 4.4vw, 2.6rem);
-    line-height: 1.15;
-    margin: 0 0 10px;
-    letter-spacing: -.02em;
+    font-size: clamp(1.7rem, 4.2vw, 2.65rem);
+    line-height: 1.14;
+    margin: 0 auto 14px;
+    max-width: 16ch;
+    letter-spacing: -.025em;
+    text-wrap: balance;
 }
 
 .hero__subtitle {
     margin: 0 auto;
-    max-width: 620px;
+    max-width: 580px;
     color: var(--ink-soft);
+    font-size: 1.04rem;
+    text-wrap: pretty;
+}
+
+.hero__actions {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 28px;
+}
+
+.hero__facts {
+    position: relative;
+    z-index: 1;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 30px;
+    margin: 30px 0 0;
+    padding: 0;
+    font-size: .86rem;
+    color: var(--ink-faint);
+}
+
+.hero__facts strong {
+    color: var(--green-dark);
+    font-size: 1.02rem;
 }
 
 .view__title {
@@ -276,6 +350,17 @@ a {
 .dropzone.is-dragover {
     border-color: var(--green);
     background: var(--green-soft);
+}
+
+/* Destello al llegar desde el boton "Subir mi foto". */
+.dropzone.is-highlighted {
+    border-color: var(--green);
+    animation: pulse 1.4s ease;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(31, 157, 87, 0); }
+    30%      { box-shadow: 0 0 0 7px rgba(31, 157, 87, .16); }
 }
 
 .dropzone.has-file {
@@ -544,14 +629,65 @@ a {
     font-size: .85rem;
 }
 
+/* Pasos extensos: mas aire entre lineas para que se lean comodos. */
 .steps {
     margin: 0;
-    padding-left: 20px;
+    padding-left: 22px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    font-size: .92rem;
+    gap: 11px;
+    font-size: .93rem;
+    line-height: 1.62;
     color: var(--ink-soft);
+}
+
+.steps li {
+    padding-left: 4px;
+}
+
+.steps li::marker {
+    color: var(--green);
+    font-weight: 700;
+}
+
+/* --- Tip del chef --- */
+
+.cheftip {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    background: var(--amber-soft);
+    border: 1px solid #f0dcb8;
+    border-left: 3px solid var(--amber);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+}
+
+.cheftip__icon {
+    font-size: 1.05rem;
+    line-height: 1.4;
+    flex: 0 0 auto;
+}
+
+.cheftip__body {
+    min-width: 0;
+}
+
+.cheftip__label {
+    display: block;
+    font-size: .74rem;
+    font-weight: 700;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    color: #9a5e15;
+    margin-bottom: 3px;
+}
+
+.cheftip__text {
+    margin: 0;
+    font-size: .9rem;
+    line-height: 1.55;
+    color: #7c4f15;
 }
 
 .card__footer {
@@ -658,12 +794,55 @@ a {
     font-size: .92rem;
 }
 
+.modal__box--narrow {
+    max-width: 380px;
+    text-align: center;
+}
+
 .docs-frame {
     width: 100%;
     height: 68vh;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     background: #fff;
+}
+
+/* --- Codigo QR --- */
+
+.qr {
+    margin: 4px auto 14px;
+    width: min(260px, 70vw);
+    aspect-ratio: 1;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.qr svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.qr__url {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--ink-faint);
+    word-break: break-all;
+}
+
+.qr__note {
+    margin: 12px 0 0;
+    font-size: .82rem;
+    line-height: 1.5;
+    color: #8a5a14;
+    background: var(--amber-soft);
+    border: 1px solid #f0dcb8;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    text-align: left;
 }
 
 /* ---------- Pestanas y formularios ---------- */
@@ -784,6 +963,19 @@ a {
 /* ---------- Responsive ---------- */
 
 @media (max-width: 680px) {
+    .hero {
+        padding: 34px 18px 30px;
+        border-radius: 18px;
+    }
+
+    .hero__actions .btn {
+        width: 100%;
+    }
+
+    .hero__facts {
+        gap: 8px 20px;
+    }
+
     .topbar__inner {
         gap: 10px;
     }

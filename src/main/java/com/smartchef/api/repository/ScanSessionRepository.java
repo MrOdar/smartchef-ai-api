@@ -28,4 +28,16 @@ public interface ScanSessionRepository extends JpaRepository<ScanSession, Long> 
             where s.id = :id
             """)
     Optional<ScanSession> findByIdWithRecipes(@Param("id") Long id);
+
+    /**
+     * Sesion de demostracion precalculada. Se compara con true explicitamente
+     * porque las sesiones anteriores a la Fase 2 tienen la columna en NULL.
+     */
+    @Query("""
+            select distinct s from ScanSession s
+            left join fetch s.recipes
+            where s.demo = true
+            order by s.id asc
+            """)
+    List<ScanSession> findDemoSessions();
 }

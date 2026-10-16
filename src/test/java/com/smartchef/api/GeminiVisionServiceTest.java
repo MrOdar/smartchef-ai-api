@@ -263,6 +263,88 @@ class GeminiVisionServiceTest {
                 .exchange(anyString(), eq(HttpMethod.GET), any(HttpEntity.class), eq(String.class));
     }
 
+    /** Captura el cuerpo JSON realmente enviado a Gemini. */
+    private JsonNode captureRequestBody() throws Exception {
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<HttpEntity<String>> captor = ArgumentCaptor.forClass(HttpEntity.class);
+        org.mockito.Mockito.verify(restTemplate)
+                .postForObject(anyString(), captor.capture(), eq(String.class));
+        return objectMapper.readTree(captor.getValue().getBody());
+    }
+
+    @Test
+    @DisplayName("El prompt enviado exige recetas extensas con chef_tip obligatorio")
+    void promptDemandsLongRecipesWithChefTip() throws Exception {
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        service.analyzeImage(IMAGE, "image/jpeg");
+
+        String prompt = captureRequestBody().at("/contents/0/parts/0/text").asText();
+
+        assertThat(prompt)
+                .contains("chef_tip")
+                .contains("entre 4 y 6 pasos")
+                .contains("entre 2 y 3 oraciones")
+                .contains("obligatorio en las 3 recetas");
+    }
+
+    @Test
+    @DisplayName("El presupuesto de salida permite las 3 recetas extensas")
+    void requestAllowsEnoughOutputTokens() throws Exception {
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(captureRequestBody().at("/generationConfig/maxOutputTokens").asInt())
+                .as("4096 trunca el JSON de 3 recetas extensas y rompe el parseo")
+                .isGreaterThanOrEqualTo(8192);
+    }
+
+    @Test
+    @DisplayName("Deserializa el chef_tip que devuelve el modelo")
+    void parsesChefTip() {
+        String withTip = """
+                {
+                  "detected_ingredients": ["tomate"],
+                  "recipes": [
+                    {
+                      "title": "Tomates confitados",
+                      "description": "Dulces y concentrados.",
+                      "prep_time_minutes": 90,
+                      "difficulty": "MEDIA",
+                      "calories_estimate": 210,
+                      "steps": ["Precalienta el horno a 120 grados", "Hornea 80 minutos"],
+                      "chef_tip": "Anade una pizca de azucar para contrarrestar la acidez.",
+                      "ingredients": [
+                        { "name": "tomate", "quantity": "6 unidades", "is_available": true }
+                      ]
+                    }
+                  ]
+                }
+                """;
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(withTip));
+
+        GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(result.recipes().get(0).chefTip())
+                .isEqualTo("Anade una pizca de azucar para contrarrestar la acidez.");
+    }
+
+    @Test
+    @DisplayName("Un JSON sin chef_tip sigue deserializando sin romper")
+    void toleratesMissingChefTip() {
+        when(restTemplate.postForObject(anyString(), any(HttpEntity.class), eq(String.class)))
+                .thenReturn(geminiEnvelope(VALID_JSON));
+
+        GeminiRecipeResult result = service.analyzeImage(IMAGE, "image/jpeg");
+
+        assertThat(result.recipes()).hasSize(1);
+        assertThat(result.recipes().get(0).chefTip()).isNull();
+    }
+
     @Test
     @DisplayName("El diagnostico no expone la API key ni el cuerpo de error de Google")
     void diagnoseDoesNotLeakSecrets() {

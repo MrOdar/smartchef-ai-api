@@ -98,6 +98,44 @@ public class RecipeService {
                 saved.getCreatedAt());
     }
 
+    /**
+     * Persiste el resultado precalculado de la demo como una sesion real sin
+     * usuario. Lo usa {@link DemoDataSeeder} al arrancar; no invoca a Gemini.
+     */
+    @Transactional
+    public ScanSession seedDemoSession(GeminiRecipeResult result) {
+        ScanSession session = new ScanSession();
+        session.setUser(null);
+        session.setDemo(true);
+        session.setDetectedIngredientsSummary(String.join(", ", normalizeDetected(result)));
+
+        for (GeminiRecipeResult.GeneratedRecipe generated : result.recipes()) {
+            session.addRecipe(toRecipeEntity(generated));
+        }
+
+        return scanSessionRepository.save(session);
+    }
+
+    /**
+     * Devuelve la sesion demo ya sembrada. No hay ninguna llamada a la IA en
+     * este camino: es una unica lectura de base de datos.
+     */
+    @Transactional(readOnly = true)
+    public ScanResultResponse demo(Long userId) {
+        ScanSession session = scanSessionRepository.findDemoSessions().stream()
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "La sesion de demostracion no esta disponible todavia"));
+
+        Set<Long> favoriteIds = favoriteIdsFor(userId);
+
+        return new ScanResultResponse(
+                session.getId(),
+                splitSummary(session.getDetectedIngredientsSummary()),
+                session.getRecipes().stream().map(r -> toResponse(r, favoriteIds)).toList(),
+                session.getCreatedAt());
+    }
+
     @Transactional(readOnly = true)
     public List<ScanResultResponse> history(Long userId) {
         Set<Long> favoriteIds = favoriteIdsFor(userId);
@@ -153,6 +191,7 @@ public class RecipeService {
         recipe.setDifficulty(Difficulty.fromText(generated.difficulty()));
         recipe.setCaloriesEstimate(generated.caloriesEstimate());
         recipe.setStepsJson(writeSteps(generated.steps()));
+        recipe.setChefTip(blankToNull(generated.chefTip()));
 
         for (GeminiRecipeResult.GeneratedIngredient ingredient : generated.ingredients()) {
             if (ingredient.name() == null || ingredient.name().isBlank()) {
@@ -234,6 +273,11 @@ public class RecipeService {
 
     private String blankToDefault(String value, String fallback) {
         return (value == null || value.isBlank()) ? fallback : value.trim();
+    }
+
+    /** Un tip vacio se guarda como nulo para que el frontend omita el recuadro. */
+    private String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value.trim();
     }
 
     private String truncate(String value, int maxLength) {

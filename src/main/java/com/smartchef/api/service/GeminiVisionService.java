@@ -50,14 +50,21 @@ public class GeminiVisionService {
               "recipes": [
                 {
                   "title": "Nombre de la receta",
-                  "description": "Descripcion breve y apetitosa en una o dos frases",
+                  "description": "Descripcion gastronomica apetitosa de 2 o 3 oraciones completas que
+                                  explique el caracter del plato, su textura y a que ocasion encaja",
                   "prep_time_minutes": 25,
                   "difficulty": "FACIL",
                   "calories_estimate": 450,
-                  "steps": ["Paso 1 detallado", "Paso 2 detallado", "Paso 3 detallado"],
+                  "steps": [
+                    "Paso 1 con tecnica, tiempo y temperatura concretos",
+                    "Paso 2 con tecnica, tiempo y temperatura concretos",
+                    "Paso 3 con tecnica, tiempo y temperatura concretos",
+                    "Paso 4 con tecnica, tiempo y temperatura concretos"
+                  ],
+                  "chef_tip": "Consejo practico del chef para mejorar notablemente el plato",
                   "ingredients": [
-                    { "name": "tomate", "quantity": "2 unidades", "is_available": true },
-                    { "name": "queso parmesano", "quantity": "50 g", "is_available": false }
+                    { "name": "tomate", "quantity": "2 unidades medianas", "is_available": true },
+                    { "name": "queso parmesano", "quantity": "50 g rallado", "is_available": false }
                   ]
                 }
               ]
@@ -68,13 +75,33 @@ public class GeminiVisionService {
             - "difficulty" solo puede ser FACIL, MEDIA o DIFICIL.
             - "prep_time_minutes" y "calories_estimate" son numeros enteros.
             - "is_available" es true solo si el ingrediente aparece en la imagen; false si hay que comprarlo.
-            - Todos los textos en espanol neutro y cada receta con un minimo de 3 pasos.
+            - Todos los textos en espanol neutro.
             - Si la imagen no contiene alimentos, devuelve "detected_ingredients" vacio y "recipes" vacio.
+
+            Calidad exigida en cada receta:
+            - "description": entre 2 y 3 oraciones completas, apetitosas y concretas. Nunca una sola frase suelta.
+            - "steps": entre 4 y 6 pasos. Cada paso debe ser una instruccion accionable que indique el
+              tiempo de coccion, la temperatura o el tipo de fuego (suave, medio, fuerte) y la tecnica
+              culinaria empleada (sofreir, pochar, sellar, emulsionar, gratinar, reducir...).
+              No escribas pasos vagos del tipo "cocinar hasta que este listo".
+            - "ingredients": cantidades precisas y utiles (gramos, mililitros, unidades o cucharadas).
+              Evita "al gusto" salvo en sal, pimienta y especias.
+            - "chef_tip": obligatorio en las 3 recetas. Una sola frase con un consejo practico y
+              especifico de este plato (un truco de textura, de punto de coccion, de sustitucion o de
+              presentacion). No repitas informacion que ya este en los pasos.
+
+            Se generoso en el detalle: las recetas deben poder seguirse sin conocimientos previos.
             """;
 
+    /**
+     * Orden de preferencia. 3.8-flash va primero porque las recetas extensas con
+     * "chef_tip" exigen mas capacidad de la que ofrece el escalon Lite, que
+     * tiende a truncar o a desviarse del esquema JSON. Lite queda de respaldo
+     * inmediato para cuando 3.8 este saturado.
+     */
     private static final List<String> FALLBACK_MODELS = List.of(
-            "gemini-3.5-flash-lite",
             "gemini-3.8-flash",
+            "gemini-3.5-flash-lite",
             "gemini-2.5-flash",
             "gemini-2.5-flash-lite",
             "gemini-2.0-flash",
@@ -415,7 +442,9 @@ public class GeminiVisionService {
         ObjectNode generationConfig = root.putObject("generationConfig");
         generationConfig.put("response_mime_type", "application/json");
         generationConfig.put("temperature", properties.temperature());
-        generationConfig.put("maxOutputTokens", 4096);
+        // 8192: las 3 recetas extensas con pasos detallados y chef_tip no caben
+        // en 4096, y un JSON truncado revienta el parseo de forma determinista.
+        generationConfig.put("maxOutputTokens", 8192);
 
         return root.toString();
     }

@@ -35,32 +35,71 @@
     <!-- ============ VISTA: ESCANEAR ============ -->
     <section class="view is-active" id="view-scan">
         <div class="hero">
-            <p class="hero__eyebrow">Cocina de aprovechamiento con IA</p>
-            <h1 class="hero__title">
-                &iquest;No sabes que cocinar con lo que tienes en tu refri?
-            </h1>
-            <p class="hero__subtitle">
-                La IA crea <strong>3 recetas gourmet de aprovechamiento</strong> en segundos.
-                Solo necesitas una foto de tu refrigeradora o tu despensa.
-            </p>
+            <div class="hero__inner">
 
-            <div class="hero__actions">
-                <button class="btn btn--primary btn--lg" id="btn-hero-upload" type="button">
-                    <span aria-hidden="true">&#128247;</span> Subir mi foto
-                </button>
-                <button class="btn btn--soft btn--lg" id="btn-hero-demo" type="button">
-                    <span aria-hidden="true">&#9889;</span> Probar con foto demo
-                </button>
-                <button class="btn btn--soft btn--lg" id="btn-hero-qr" type="button" hidden>
-                    <span aria-hidden="true">&#128241;</span> Abrir en celular
-                </button>
+                <div class="hero__copy">
+                    <p class="hero__eyebrow">
+                        <span class="hero__dot" aria-hidden="true"></span>
+                        Cocina de aprovechamiento con IA
+                    </p>
+
+                    <h1 class="hero__title">
+                        &iquest;No sabes que cocinar con lo que tienes en tu
+                        <span class="hero__mark">refri</span>?
+                    </h1>
+
+                    <p class="hero__subtitle">
+                        La IA crea <strong>3 recetas gourmet de aprovechamiento</strong> en
+                        segundos. Solo necesitas una foto de tu refrigeradora o tu despensa.
+                    </p>
+
+                    <div class="hero__actions">
+                        <button class="btn btn--primary btn--lg" id="btn-hero-upload" type="button">
+                            <span aria-hidden="true">&#128247;</span> Subir mi foto
+                        </button>
+                        <button class="btn btn--soft btn--lg" id="btn-hero-demo" type="button">
+                            <span aria-hidden="true">&#9889;</span> Probar con foto demo
+                        </button>
+                        <button class="btn btn--soft btn--lg" id="btn-hero-qr" type="button" hidden>
+                            <span aria-hidden="true">&#128241;</span> Abrir en celular
+                        </button>
+                    </div>
+
+                    <ul class="hero__facts">
+                        <li><strong>3</strong> recetas por foto</li>
+                        <li><strong>~2 s</strong> de analisis</li>
+                        <li><strong>0 &euro;</strong> sin registro</li>
+                    </ul>
+                </div>
+
+                <!-- Muestra el resultado antes de pedir nada: foto -> ingredientes -> receta. -->
+                <div class="hero__visual" aria-hidden="true">
+                    <figure class="shot">
+                        <img class="shot__img" src="assets/demo-fridge.jpg" alt="" loading="lazy"
+                             width="1200" height="900">
+                        <figcaption class="shot__caption">tu refrigeradora</figcaption>
+                    </figure>
+
+                    <ul class="floaties floaties--top">
+                        <li class="floaty">&#10004; tomate</li>
+                        <li class="floaty">&#10004; huevo</li>
+                        <li class="floaty">&#10004; calabacin</li>
+                    </ul>
+
+                    <div class="minicard">
+                        <p class="minicard__title">Pisto casero con huevo</p>
+                        <p class="minicard__meta">
+                            <span>&#9201; 45 min</span>
+                            <span>&#9881; Media</span>
+                            <span>&#128293; 420 kcal</span>
+                        </p>
+                        <p class="minicard__tip">
+                            <strong>&#128161; Tip</strong> Media cucharadita de azucar corta la acidez.
+                        </p>
+                    </div>
+                </div>
+
             </div>
-
-            <ul class="hero__facts">
-                <li><strong>3</strong> recetas por foto</li>
-                <li><strong>~2 s</strong> de analisis</li>
-                <li><strong>0 &euro;</strong> sin registro</li>
-            </ul>
         </div>
 
         <div class="dropzone" id="dropzone" tabindex="0" role="button"

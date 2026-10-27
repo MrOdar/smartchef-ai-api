@@ -107,9 +107,11 @@ a {
     transition: background .15s, color .15s;
 }
 
-.navlink:hover {
-    background: var(--green-soft);
-    color: var(--green-dark);
+@media (hover: hover) {
+    .navlink:hover {
+        background: var(--green-soft);
+        color: var(--green-dark);
+    }
 }
 
 .navlink.is-active {
@@ -141,11 +143,19 @@ a {
     border-radius: var(--radius-sm);
     padding: 9px 17px;
     cursor: pointer;
-    transition: background .15s, border-color .15s, color .15s, transform .08s;
+    transition-property: background-color, border-color, color, scale;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
 }
 
-.btn:active:not(:disabled) {
-    transform: translateY(1px);
+.btn:not(:disabled):active {
+    scale: .96;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn:not(:disabled):active {
+        scale: 1;
+    }
 }
 
 .btn:disabled {
@@ -158,8 +168,10 @@ a {
     color: #fff;
 }
 
-.btn--primary:hover:not(:disabled) {
-    background: var(--green-dark);
+@media (hover: hover) {
+    .btn--primary:hover:not(:disabled) {
+        background: var(--green-dark);
+    }
 }
 
 .btn--ghost {
@@ -168,9 +180,11 @@ a {
     color: var(--ink-soft);
 }
 
-.btn--ghost:hover:not(:disabled) {
-    border-color: var(--green);
-    color: var(--green-dark);
+@media (hover: hover) {
+    .btn--ghost:hover:not(:disabled) {
+        border-color: var(--green);
+        color: var(--green-dark);
+    }
 }
 
 .btn--soft {
@@ -180,9 +194,11 @@ a {
     box-shadow: var(--shadow-sm);
 }
 
-.btn--soft:hover:not(:disabled) {
-    border-color: var(--green);
-    color: var(--green-dark);
+@media (hover: hover) {
+    .btn--soft:hover:not(:disabled) {
+        border-color: var(--green);
+        color: var(--green-dark);
+    }
 }
 
 .btn--lg {
@@ -202,9 +218,11 @@ a {
     width: 100%;
 }
 
-.btn--fav:hover:not(:disabled) {
-    border-color: var(--amber);
-    color: var(--amber);
+@media (hover: hover) {
+    .btn--fav:hover:not(:disabled) {
+        border-color: var(--amber);
+        color: var(--amber);
+    }
 }
 
 .btn--fav.is-on {
@@ -237,10 +255,9 @@ a {
 
 .hero {
     position: relative;
-    text-align: center;
-    margin: 0 0 34px;
-    padding: 46px 24px 40px;
-    border-radius: 22px;
+    margin: 0 0 40px;
+    padding: 54px 40px 58px;
+    border-radius: 24px;
     background:
         radial-gradient(120% 140% at 50% -20%, #ffffff 0%, var(--cream) 46%, var(--cream-deep) 100%);
     border: 1px solid var(--line);
@@ -258,59 +275,271 @@ a {
     pointer-events: none;
 }
 
+/* Dos columnas en escritorio; una sola, centrada, en pantallas estrechas. */
+.hero__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr);
+    align-items: center;
+    gap: 46px;
+    max-width: 1020px;
+    margin: 0 auto;
+    text-align: left;
+}
+
 .hero__eyebrow {
-    margin: 0 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 14px;
     font-size: .76rem;
     font-weight: 700;
     letter-spacing: .14em;
     text-transform: uppercase;
-    color: var(--green);
+    color: var(--green-dark);
+    background: rgba(31, 157, 87, .09);
+    border: 1px solid rgba(31, 157, 87, .18);
+    padding: 6px 13px;
+    border-radius: 999px;
+}
+
+.hero__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    flex: 0 0 auto;
 }
 
 .hero__title {
-    font-size: clamp(1.7rem, 4.2vw, 2.65rem);
-    line-height: 1.14;
-    margin: 0 auto 14px;
-    max-width: 16ch;
-    letter-spacing: -.025em;
+    font-size: clamp(1.8rem, 3.4vw, 2.7rem);
+    line-height: 1.12;
+    margin: 0 0 16px;
+    letter-spacing: -.028em;
     text-wrap: balance;
 }
 
+/* Subrayado dibujado, no decoration: no corta descendentes. */
+.hero__mark {
+    position: relative;
+    white-space: nowrap;
+    color: var(--green-dark);
+}
+
+.hero__mark::after {
+    content: "";
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    bottom: .06em;
+    height: .34em;
+    background: rgba(31, 157, 87, .18);
+    border-radius: 3px;
+    z-index: -1;
+}
+
 .hero__subtitle {
-    margin: 0 auto;
-    max-width: 580px;
+    margin: 0;
+    max-width: 46ch;
     color: var(--ink-soft);
     font-size: 1.04rem;
     text-wrap: pretty;
 }
 
 .hero__actions {
-    position: relative;
-    z-index: 1;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 12px;
     margin-top: 28px;
 }
 
 .hero__facts {
-    position: relative;
-    z-index: 1;
     list-style: none;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 30px;
-    margin: 30px 0 0;
-    padding: 0;
+    gap: 10px 26px;
+    margin: 28px 0 0;
+    padding: 20px 0 0;
+    border-top: 1px solid var(--line);
     font-size: .86rem;
     color: var(--ink-faint);
 }
 
 .hero__facts strong {
+    display: block;
     color: var(--green-dark);
-    font-size: 1.02rem;
+    font-size: 1.16rem;
+    line-height: 1.2;
+}
+
+/* ---------- Composicion visual del hero ---------- */
+
+.hero__visual {
+    position: relative;
+    isolation: isolate;
+}
+
+/* Marco: radio exterior = radio interior (12) + padding (10) + borde (1). */
+.shot {
+    margin: 0;
+    padding: 10px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 23px;
+    box-shadow:
+        0 1px 2px rgba(20, 40, 28, .06),
+        0 12px 28px rgba(20, 40, 28, .10),
+        0 28px 60px rgba(20, 40, 28, .06);
+    rotate: -1.6deg;
+}
+
+.shot__img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 12px;
+    /* Borde neutro puro: un gris teñido deja franja de color en la foto. */
+    outline: 1px solid oklch(0 0 0 / 0.1);
+    outline-offset: -1px;
+}
+
+.shot__caption {
+    margin: 9px 2px 1px;
+    font-size: .74rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.floaties {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 0;
+    padding: 0;
+}
+
+.floaties--top {
+    position: absolute;
+    top: -16px;
+    left: -14px;
+    max-width: 78%;
+}
+
+.floaty {
+    background: var(--bg-elev);
+    color: var(--green-dark);
+    border: 1px solid #c8e8d6;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(20, 40, 28, .10);
+}
+
+.minicard {
+    position: absolute;
+    right: -18px;
+    bottom: -26px;
+    width: min(252px, 82%);
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 14px 15px;
+    box-shadow:
+        0 1px 2px rgba(20, 40, 28, .06),
+        0 14px 32px rgba(20, 40, 28, .13);
+    rotate: 1.4deg;
+}
+
+.minicard__title {
+    margin: 0 0 7px;
+    font-size: .95rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.minicard__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px 10px;
+    margin: 0;
+    font-size: .74rem;
+    color: var(--ink-faint);
+}
+
+.minicard__tip {
+    margin: 11px 0 0;
+    padding: 8px 10px;
+    font-size: .74rem;
+    line-height: 1.45;
+    color: #7c4f15;
+    background: var(--amber-soft);
+    border-left: 3px solid var(--amber);
+    border-radius: 7px;
+}
+
+.minicard__tip strong {
+    display: block;
+    margin-bottom: 1px;
+}
+
+/* ---------- Entrada escalonada del hero ---------- */
+
+/*
+ * El orden comunica jerarquia: etiqueta, titulo, texto, acciones, datos y
+ * visual, separados 100ms. Solo ocurre una vez, al cargar.
+ */
+@media (prefers-reduced-motion: no-preference) {
+    .hero__eyebrow,
+    .hero__title,
+    .hero__subtitle,
+    .hero__actions,
+    .hero__facts,
+    .hero__visual {
+        animation: hero-enter 300ms ease-out both;
+    }
+
+    .hero__title    { animation-delay: 100ms; }
+    .hero__subtitle { animation-delay: 200ms; }
+    .hero__actions  { animation-delay: 300ms; }
+    .hero__facts    { animation-delay: 400ms; }
+    .hero__visual   { animation-delay: 500ms; }
+}
+
+@keyframes hero-enter {
+    from {
+        opacity: 0;
+        filter: blur(4px);
+        translate: 0 12px;
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+        translate: 0 0;
+    }
+}
+
+/* Sin movimiento: solo aparece, nunca se queda invisible. */
+@media (prefers-reduced-motion: reduce) {
+    .hero__eyebrow,
+    .hero__title,
+    .hero__subtitle,
+    .hero__actions,
+    .hero__facts,
+    .hero__visual {
+        animation: hero-fade 300ms ease-out both;
+    }
+}
+
+@keyframes hero-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .view__title {
@@ -341,10 +570,17 @@ a {
     outline: none;
 }
 
-.dropzone:hover,
+/* El foco de teclado no se gatea: existe en cualquier dispositivo. */
 .dropzone:focus-visible {
     border-color: var(--green);
     background: var(--green-soft);
+}
+
+@media (hover: hover) {
+    .dropzone:hover {
+        border-color: var(--green);
+        background: var(--green-soft);
+    }
 }
 
 .dropzone.is-dragover {
@@ -395,6 +631,9 @@ a {
     display: block;
     margin: 0 auto;
     box-shadow: var(--shadow-sm);
+    /* Neutro puro: un gris teñido dejaria franja de color en la foto. */
+    outline: 1px solid oklch(0 0 0 / 0.1);
+    outline-offset: -1px;
 }
 
 .preview__meta {
@@ -529,12 +768,21 @@ a {
     display: flex;
     flex-direction: column;
     gap: 14px;
-    transition: box-shadow .2s, transform .2s;
+    transition-property: box-shadow, translate;
+    transition-duration: 200ms;
+    transition-timing-function: ease-out;
 }
 
-.card:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-2px);
+@media (hover: hover) {
+    .card:hover {
+        box-shadow: var(--shadow-md);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .card:hover {
+            translate: 0 -2px;
+        }
+    }
 }
 
 .card__title {
@@ -779,8 +1027,10 @@ a {
     cursor: pointer;
 }
 
-.modal__close:hover {
-    color: var(--ink);
+@media (hover: hover) {
+    .modal__close:hover {
+        color: var(--ink);
+    }
 }
 
 .modal__title {
@@ -962,9 +1212,51 @@ a {
 
 /* ---------- Responsive ---------- */
 
+/* El visual del hero necesita ancho: por debajo de 900px va debajo del texto. */
+@media (max-width: 900px) {
+    .hero {
+        padding: 44px 26px 48px;
+    }
+
+    .hero__inner {
+        grid-template-columns: 1fr;
+        gap: 52px;
+        max-width: 560px;
+        text-align: center;
+    }
+
+    .hero__subtitle {
+        margin-inline: auto;
+    }
+
+    .hero__actions,
+    .hero__facts {
+        justify-content: center;
+    }
+
+    .shot {
+        rotate: 0deg;
+    }
+
+    .floaties--top {
+        left: 0;
+        right: 0;
+        max-width: none;
+        justify-content: center;
+    }
+
+    .minicard {
+        position: static;
+        width: 100%;
+        margin-top: 18px;
+        rotate: 0deg;
+        text-align: left;
+    }
+}
+
 @media (max-width: 680px) {
     .hero {
-        padding: 34px 18px 30px;
+        padding: 34px 18px 34px;
         border-radius: 18px;
     }
 
@@ -1001,5 +1293,34 @@ a {
 
     .docs-frame {
         height: 60vh;
+    }
+}
+
+/* ---------- Movimiento bajo preferencia del usuario ---------- */
+
+/*
+ * Ninguna animacion de la interfaz puede mover, escalar ni desenfocar cuando
+ * el usuario pide menos movimiento. Se sustituyen por un fundido de opacidad,
+ * nunca por la desaparicion del elemento.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .view.is-active {
+        animation: hero-fade 200ms ease-out both;
+    }
+
+    .dropzone.is-highlighted {
+        animation: none;
+    }
+
+    .toast {
+        animation: hero-fade 200ms ease-out both;
+    }
+
+    .card {
+        transition-property: box-shadow;
+    }
+
+    .loader__spinner {
+        animation-duration: 1.6s;
     }
 }

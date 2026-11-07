@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmartChef AI</title>
+    <meta name="description" content="Fotografia tu despensa y recibe 3 recetas de aprovechamiento generadas con Google Gemini.">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127859;</text></svg>">
+</head>
+<body>
+<header class="topbar">
+    <div class="topbar__inner">
+        <a class="brand" href="/" title="Volver al inicio">
+            <span class="brand__mark" aria-hidden="true">&#127859;</span>
+            <span class="brand__text">SmartChef&nbsp;<span class="brand__ai">AI&nbsp;3.8</span></span>
+        </a>
+
+        <nav class="topbar__nav">
+            <button class="navlink is-active" data-view="scan" type="button">Escanear</button>
+            <button class="navlink" data-view="favorites" type="button">Favoritos</button>
+            <button class="navlink" data-view="history" type="button">Historial</button>
+            <button class="navlink" id="btn-docs" type="button">API Docs</button>
+        </nav>
+
+        <div class="topbar__auth">
+            <span class="userchip is-hidden" id="userchip"></span>
+            <button class="nav-mode-btn" id="btn-switch-to-dock" type="button" title="Cambiar a Dock flotante">
+                <span>📱</span>
+                <span>Dock</span>
+            </button>
+            <button class="theme-toggle-btn" id="theme-btn" type="button" aria-label="Cambiar tema">
+                <span class="theme-toggle-icon" id="theme-icon">🌙</span>
+            </button>
+            <button class="interactive-hover-btn" id="btn-auth" type="button">
+                <span class="btn-bg-fill"></span>
+                <span class="btn-dot"></span>
+                <span class="btn-text" id="btn-auth-text">Iniciar sesion</span>
+                <span class="btn-arrow">&rarr;</span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="page">
+
+    <!-- ============ VISTA: ESCANEAR ============ -->
+    <section class="view is-active" id="view-scan">
+        <div class="hero">
+            <div class="hero__inner">
+
+                <div class="hero__copy">
+                    <p class="hero__eyebrow">
+                        <span class="hero__dot" aria-hidden="true"></span>
+                        Cocina de aprovechamiento con IA
+                    </p>
+
+                    <h1 class="hero__title kinetic-text">
+                        <span class="kinetic-word" style="--d: 80ms;">&iquest;No</span>
+                        <span class="kinetic-word" style="--d: 140ms;">sabes</span>
+                        <span class="kinetic-word" style="--d: 200ms;">qu&eacute;</span>
+                        <span class="kinetic-word" style="--d: 260ms;">cocinar</span>
+                        <span class="kinetic-word" style="--d: 320ms;">con</span>
+                        <span class="kinetic-word" style="--d: 380ms;">lo</span>
+                        <span class="kinetic-word" style="--d: 440ms;">que</span>
+                        <span class="kinetic-word" style="--d: 500ms;">tienes</span>
+                        <span class="kinetic-word" style="--d: 560ms;">en</span>
+                        <span class="kinetic-word" style="--d: 620ms;">tu</span>
+                        <span class="hero__mark kinetic-word" style="--d: 700ms;">refri?</span>
+                    </h1>
+
+                    <p class="hero__subtitle">
+                        La IA crea <strong>3 recetas gourmet de aprovechamiento</strong> en
+                        segundos. Solo necesitas una foto de tu refrigeradora o tu despensa.
+                    </p>
+
+                    <div class="hero__actions">
+                        <button class="btn btn--primary btn--lg btn--sweep" id="btn-hero-upload" type="button">
+                            <span class="btn__fill" aria-hidden="true"></span>
+                            <span class="btn__label"><span aria-hidden="true">&#128247;</span> Subir mi foto</span>
+                            <span class="btn__arrow" aria-hidden="true">&rarr;</span>
+                        </button>
+                        <button class="btn btn--soft btn--lg btn--sweep" id="btn-hero-demo" type="button">
+                            <span class="btn__fill" aria-hidden="true"></span>
+                            <span class="btn__label"><span aria-hidden="true">&#9889;</span> Probar con foto demo</span>
+                            <span class="btn__arrow" aria-hidden="true">&rarr;</span>
+                        </button>
+                        <button class="btn btn--soft btn--lg btn--sweep" id="btn-hero-qr" type="button" hidden>
+                            <span class="btn__fill" aria-hidden="true"></span>
+                            <span class="btn__label"><span aria-hidden="true">&#128241;</span> Abrir en celular</span>
+                            <span class="btn__arrow" aria-hidden="true">&rarr;</span>
+                        </button>
+                    </div>
+
+                    <ul class="hero__facts">
+                        <li><strong>3</strong> recetas por foto</li>
+                        <li><strong>~2 s</strong> de analisis</li>
+                        <li><strong>92</strong> tests en verde</li>
+                    </ul>
+                </div>
+
+                <!--
+                  Panel de inferencia: encadena foto, deteccion y receta para que
+                  se vea el pipeline completo, no tres adornos sueltos. Los datos
+                  son los de la sesion demo real (DemoDataSeeder), asi que lo que
+                  se ve aqui es lo que devuelve "Probar con foto demo".
+                -->
+                <div class="hero__visual" aria-hidden="true">
+                    <div class="panel-ai glare-card" id="hero-shot">
+                        <span class="border-beam"></span>
+
+                        <header class="panel-ai__head">
+                            <span class="panel-ai__status">
+                                <span class="hero__dot"></span>
+                                Inferencia Gemini 3.8 Vision
+                            </span>
+                            <span class="panel-ai__tag">ejemplo</span>
+                        </header>
+
+                        <figure class="shot">
+                            <img class="shot__img" src="assets/demo-fridge.jpg" alt=""
+                                 loading="lazy" width="1200" height="900">
+                        </figure>
+
+                        <section class="panel-ai__block">
+                            <p class="panel-ai__label">
+                                Ingredientes detectados
+                                <span class="panel-ai__count">13 detectados</span>
+                            </p>
+                            <ul class="detections">
+                                <li class="detection">tomate <b>99%</b></li>
+                                <li class="detection">huevo <b>97%</b></li>
+                                <li class="detection">cebolla <b>94%</b></li>
+                                <li class="detection">calabacin <b>92%</b></li>
+                            </ul>
+                        </section>
+
+                        <section class="panel-ai__block panel-ai__block--result">
+                            <p class="panel-ai__label">
+                                Receta recomendada
+                                <span class="panel-ai__count">1 de 3</span>
+                            </p>
+                            <p class="minicard__title">Pisto casero con huevo escalfado</p>
+                            <p class="minicard__meta">
+                                <span>&#9201; 45 min</span>
+                                <span>&#9881; Media</span>
+                                <span>&#128293; 420 kcal</span>
+                            </p>
+                            <p class="minicard__tip">
+                                <strong>&#128161; Tip del Chef</strong>
+                                Media cucharadita de azucar corta la acidez del tomate.
+                            </p>
+                        </section>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="dropzone" id="dropzone" tabindex="0" role="button"
+             aria-label="Arrastra una foto o pulsa para seleccionar un archivo">
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
+
+            <div class="dropzone__empty" id="dropzone-empty">
+                <svg class="dropzone__icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M12 16V4m0 0L8 8m4-4 4 4" stroke="currentColor" stroke-width="1.6"
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor"
+                          stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                </svg>
+                <p class="dropzone__title">Arrastra tu foto aqui</p>
+                <p class="dropzone__hint">o pulsa para elegir un archivo &middot; JPEG, PNG o WEBP &middot; max. 15MB</p>
+            </div>
+
+            <div class="preview is-hidden" id="preview">
+                <img class="preview__img" id="preview-img" alt="Vista previa de la foto cargada">
+                <div class="preview__meta">
+                    <span class="preview__name" id="preview-name"></span>
+                    <span class="preview__size" id="preview-size"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn--primary btn--lg" id="btn-analyze" type="button" disabled>
+                Analizar ingredientes
+            </button>
+            <button class="btn btn--ghost" id="btn-reset" type="button" hidden>Cambiar foto</button>
+        </div>
+
+        <!-- Indicador de procesamiento -->
+        <div class="loader is-hidden" id="loader" role="status" aria-live="polite">
+            <div class="loader__spinner" aria-hidden="true"></div>
+            <p class="loader__text">Analizando ingredientes con Gemini AI...</p>
+            <p class="loader__sub" id="loader-sub">Detectando alimentos y creando tus recetas</p>
+        </div>
+
+        <div class="alert is-hidden" id="alert" role="alert"></div>
+
+        <!-- Resultados -->
+        <section class="results is-hidden" id="results">
+            <div class="panel">
+                <h2 class="panel__title">Ingredientes detectados</h2>
+                <ul class="pills" id="detected-list"></ul>
+            </div>
+
+            <h2 class="section-title">Tus 3 recetas sugeridas</h2>
+            <div class="cards" id="recipe-cards"></div>
+        </section>
+    </section>
+
+    <!-- ============ VISTA: FAVORITOS ============ -->
+    <section class="view" id="view-favorites">
+        <h1 class="view__title">Mis recetas favoritas</h1>
+        <p class="view__subtitle">Las recetas que guardaste para cocinar mas tarde.</p>
+        <div class="cards" id="favorite-cards"></div>
+        <div class="empty is-hidden" id="favorites-empty">
+            <p>Todavia no has guardado ninguna receta.</p>
+        </div>
+    </section>
+
+    <!-- ============ VISTA: HISTORIAL ============ -->
+    <section class="view" id="view-history">
+        <h1 class="view__title">Historial de escaneos</h1>
+        <p class="view__subtitle">Cada foto que analizaste con su resultado completo.</p>
+        <div id="history-list"></div>
+        <div class="empty is-hidden" id="history-empty">
+            <p>Aun no tienes escaneos guardados en tu cuenta.</p>
+        </div>
+    </section>
+</main>
+
+<footer class="footer">
+    <p>
+        SmartChef AI &middot; Spring Boot 3.3.4 &middot; Java 21 &middot; Google Gemini 3.8 Flash
+        &middot; <a href="/swagger-ui.html" target="_blank" rel="noopener">Documentacion OpenAPI</a>
+    </p>
+</footer>
+
+<!-- ============ MODAL: AUTENTICACION ============ -->
+<div class="modal is-hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+
+        <h2 class="modal__title" id="auth-title">Accede a tu cuenta</h2>
+
+        <div class="tabs">
+            <button class="tab is-active" data-tab="login" type="button">Iniciar sesion</button>
+            <button class="tab" data-tab="register" type="button">Crear cuenta</button>
+        </div>
+
+        <form class="form is-active" id="form-login" novalidate>
+            <label class="field">
+                <span class="field__label">Usuario o email</span>
+                <input class="field__input" name="username" type="text" autocomplete="username" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Contrasena</span>
+                <input class="field__input" name="password" type="password" autocomplete="current-password" required>
+            </label>
+            <p class="form__error is-hidden" data-form-error></p>
+            <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+        </form>
+
+        <form class="form" id="form-register" novalidate>
+            <label class="field">
+                <span class="field__label">Usuario</span>
+                <input class="field__input" name="username" type="text" minlength="3" maxlength="50" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Email</span>
+                <input class="field__input" name="email" type="email" required>
+            </label>
+            <label class="field">
+                <span class="field__label">Nombre completo</span>
+                <input class="field__input" name="fullName" type="text" autocomplete="name">
+            </label>
+            <label class="field">
+                <span class="field__label">Contrasena</span>
+                <input class="field__input" name="password" type="password" minlength="8"
+                       autocomplete="new-password" required>
+                <span class="field__hint">Minimo 8 caracteres</span>
+            </label>
+            <p class="form__error is-hidden" data-form-error></p>
+            <button class="btn btn--primary btn--block" type="submit">Crear cuenta</button>
+        </form>
+    </div>
+</div>
+
+<!-- ============ MODAL: SWAGGER UI ============ -->
+<div class="modal is-hidden" id="docs-modal" role="dialog" aria-modal="true" aria-labelledby="docs-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box modal__box--wide">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+        <h2 class="modal__title" id="docs-title">Documentacion interactiva de la API</h2>
+        <p class="modal__lead">
+            Prueba cada endpoint directamente desde Swagger UI. Tambien puedes abrirla en una
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">pestana nueva</a>.
+        </p>
+        <iframe class="docs-frame" id="docs-frame" title="Swagger UI" src="about:blank"></iframe>
+    </div>
+</div>
+
+<!-- ============ MODAL: CODIGO QR ============ -->
+<div class="modal is-hidden" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__box modal__box--narrow">
+        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+
+        <h2 class="modal__title" id="qr-title">Abrir en tu celular</h2>
+        <p class="modal__lead">
+            Escanea el codigo con la camara de tu telefono para abrir SmartChef AI
+            y fotografiar tu refrigeradora directamente.
+        </p>
+
+        <div class="qr" id="qr-canvas" aria-live="polite"></div>
+
+        <p class="qr__url" id="qr-url"></p>
+        <p class="qr__note is-hidden" id="qr-note"></p>
+    </div>
+</div>
+
+<div class="toast is-hidden" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ==================== MAGIC DOCK FLOTANTE ==================== -->
+<div class="magic-dock-container" id="floating-dock">
+    <button class="dock-icon-btn dock-mode-switch-btn" id="btn-switch-to-topbar" data-tooltip="Subir a Barra Superior" type="button">⬆️</button>
+    <div class="dock-divider"></div>
+    <button class="dock-icon-btn is-active" data-dock-view="scan" data-tooltip="Escanear" type="button">📸</button>
+    <button class="dock-icon-btn" data-dock-view="favorites" data-tooltip="Favoritos" type="button">⭐</button>
+    <button class="dock-icon-btn" data-dock-view="history" data-tooltip="Historial" type="button">📜</button>
+    <button class="dock-icon-btn" id="dock-btn-docs" data-tooltip="API Docs" type="button">📑</button>
+    <div class="dock-divider"></div>
+    <button class="dock-icon-btn" id="dock-theme-toggle" data-tooltip="Cambiar Tema" type="button">🌙</button>
+    <button class="dock-icon-btn dock-primary" id="dock-btn-auth" data-tooltip="Cuenta" type="button">👤</button>
+</div>
+
+<script src="assets/qr.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

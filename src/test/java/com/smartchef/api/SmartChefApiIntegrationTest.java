@@ -130,20 +130,47 @@ class SmartChefApiIntegrationTest {
         return objectMapper.readTree(body).path("token").asText();
     }
 
-    // --- Salud y SPA -------------------------------------------------------
+    // --- Salud, landing y SPA ----------------------------------------------
 
     @Test
-    @DisplayName("La raiz redirige a la SPA y el HTML se sirve correctamente")
-    void servesSinglePageApp() throws Exception {
+    @DisplayName("La raiz sirve el landing y la SPA vive en /app.html")
+    void servesLandingAtRootAndAppAside() throws Exception {
         // La welcome page de Spring Boot hace forward interno a index.html.
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(forwardedUrl("index.html"));
 
-        mockMvc.perform(get("/index.html"))
+        String landing = mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(landing)
+                .as("el landing es la pagina de presentacion, no la SPA")
+                .contains("SmartChef")
+                .doesNotContain("id=\"btn-hero-upload\"");
+
+        mockMvc.perform(get("/app.html"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("SmartChef")))
                 .andExpect(content().string(containsString("Analizando ingredientes con Gemini AI")));
+    }
+
+    @Test
+    @DisplayName("El landing enlaza a la SPA y a Swagger con rutas relativas")
+    void landingLinksAreRelative() throws Exception {
+        String landing = mockMvc.perform(get("/index.html"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+
+        assertThat(landing)
+                .as("los CTA del landing deben abrir la SPA servida en el mismo origen")
+                .contains("href=\"app.html\"")
+                .contains("href=\"swagger-ui/index.html\"");
+
+        // Regla del proyecto: cero links hardcodeados al dominio de produccion.
+        assertThat(landing)
+                .as("el landing no debe apuntar a onrender.com, romperia en local")
+                .doesNotContain("onrender.com");
     }
 
     @Test
@@ -165,7 +192,7 @@ class SmartChefApiIntegrationTest {
     @Test
     @DisplayName("Permite incrustar Swagger UI en un iframe del mismo origen")
     void allowsSameOriginFraming() throws Exception {
-        mockMvc.perform(get("/index.html"))
+        mockMvc.perform(get("/app.html"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"));
     }
@@ -409,7 +436,7 @@ class SmartChefApiIntegrationTest {
     @Test
     @DisplayName("La SPA trae el hero con los 3 botones y no usa CDN")
     void landingHeroIsPresent() throws Exception {
-        String html = mockMvc.perform(get("/index.html"))
+        String html = mockMvc.perform(get("/app.html"))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
 

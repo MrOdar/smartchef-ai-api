@@ -1,6 +1,31 @@
 /* SmartChef AI - hoja de estilos de la SPA */
 
 :root {
+    /* ======================================================================
+       Sistema de movimiento compartido con el landing (landing-preview.html).
+       Una sola curva y tres duraciones en todo el producto. Cualquier valor
+       de movimiento nuevo sale de aqui, nunca de un numero suelto.
+       ====================================================================== */
+
+    /* Unica curva de salida. No se usa ninguna otra. */
+    --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+
+    /* Respuesta inmediata: hover, press, color. Nunca por encima de 150ms. */
+    --motion-fast: 150ms;
+    /* Entradas y cambios de estado poco frecuentes. */
+    --motion-enter: 300ms;
+    /* Las salidas son mas cortas que las entradas. */
+    --motion-exit: 150ms;
+
+    /* Desplazamiento y desenfoque de toda entrada escalonada. */
+    --motion-shift: 12px;
+    --motion-blur: 4px;
+    /* Separacion entre elementos de una secuencia. */
+    --motion-stagger: 100ms;
+
+    /* Escala de pulsado. */
+    --motion-press: 0.96;
+
     --bg: #f7f6f1;
     --bg-elev: #ffffff;
     --cream: #f4f1e6;
@@ -20,7 +45,10 @@
     --radius-sm: 9px;
     --shadow-sm: 0 1px 2px rgba(20, 40, 28, .06), 0 2px 8px rgba(20, 40, 28, .05);
     --shadow-md: 0 10px 30px rgba(20, 40, 28, .10);
-    --font: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+    --display: "Plus Jakarta Sans", "Inter", sans-serif;
+    --mono: "JetBrains Mono", monospace;
+    --font: var(--sans);
 }
 
 * {
@@ -74,7 +102,8 @@ a {
     display: inline-flex;
     align-items: center;
     gap: 9px;
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
     font-size: 1.14rem;
     text-decoration: none;
     color: var(--ink);
@@ -96,6 +125,7 @@ a {
 }
 
 .navlink {
+    position: relative;
     border: 0;
     background: transparent;
     font: inherit;
@@ -104,14 +134,40 @@ a {
     padding: 7px 13px;
     border-radius: 999px;
     cursor: pointer;
-    transition: background .15s, color .15s;
+    transition-property: background-color, color;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
 }
 
 @media (hover: hover) {
     .navlink:hover {
-        background: var(--green-soft);
         color: var(--green-dark);
     }
+
+    /* El subrayado crece desde la izquierda, como .nav-link del landing. */
+    .navlink:not(.is-active):hover::after {
+        width: 100%;
+    }
+}
+
+.navlink::after {
+    content: "";
+    position: absolute;
+    left: 13px;
+    right: 13px;
+    bottom: 1px;
+    width: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--green);
+    transition-property: width;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+.navlink.is-active::after {
+    /* El estado seleccionado ya se marca con la pildora verde. */
+    display: none;
 }
 
 .navlink.is-active {
@@ -144,12 +200,12 @@ a {
     padding: 9px 17px;
     cursor: pointer;
     transition-property: background-color, border-color, color, scale;
-    transition-duration: 150ms;
-    transition-timing-function: ease-out;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
 }
 
 .btn:not(:disabled):active {
-    scale: .96;
+    scale: var(--motion-press);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -206,6 +262,108 @@ a {
     font-size: 1rem;
 }
 
+/* ----------------------------------------------------------------------
+   .btn--sweep: el barrido de .interactive-hover-btn aplicado a los
+   botones del hero. Misma gramatica (circulo que crece desde la
+   izquierda, etiqueta que cede 3px, flecha que entra) con los mismos
+   tokens, para que el hero no tenga un movimiento propio.
+   ---------------------------------------------------------------------- */
+.btn--sweep {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    isolation: isolate;
+    transition-property: background-color, border-color, color, scale, translate, box-shadow;
+}
+
+.btn--sweep .btn__fill {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    transform: translateY(-50%) scale(0);
+    transition: transform var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* El primario ya es verde: su barrido oscurece en vez de pintar. */
+.btn--primary.btn--sweep .btn__fill {
+    background: linear-gradient(135deg, var(--green-dark) 0%, var(--ink) 100%);
+}
+
+.btn--sweep .btn__label {
+    position: relative;
+    z-index: 2;
+    transition: transform var(--motion-enter) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+}
+
+.btn--sweep .btn__arrow {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    margin-left: 6px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+}
+
+@media (hover: hover) {
+    .btn--sweep:hover:not(:disabled) {
+        translate: 0 -2px;
+        border-color: var(--green);
+        box-shadow: 0 6px 18px rgba(31, 157, 87, .25);
+    }
+
+    /* Radio 264px: cubre la esquina opuesta del boton mas ancho del hero. */
+    .btn--sweep:hover:not(:disabled) .btn__fill {
+        transform: translateY(-50%) scale(44);
+    }
+
+    .btn--sweep:hover:not(:disabled) .btn__label {
+        color: #fff;
+        transform: translateX(-3px);
+    }
+
+    .btn--sweep:hover:not(:disabled) .btn__arrow {
+        opacity: 1;
+        color: #fff;
+        transform: translateX(0);
+    }
+}
+
+/*
+ * Sin movimiento: el barrido desaparece y el hover vuelve al cambio de
+ * color de la variante, que ya cumple contraste. La flecha solo aparece.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .btn--sweep .btn__fill {
+        display: none;
+    }
+
+    .btn--sweep:hover:not(:disabled) {
+        translate: none;
+    }
+
+    .btn--sweep:hover:not(:disabled) .btn__label {
+        color: inherit;
+        transform: none;
+    }
+
+    .btn--sweep:hover:not(:disabled) .btn__arrow {
+        opacity: 1;
+        color: inherit;
+        transform: none;
+    }
+}
+
 .btn--block {
     width: 100%;
 }
@@ -245,7 +403,7 @@ a {
 
 .view.is-active {
     display: block;
-    animation: fade .25s ease;
+    animation: fade var(--motion-enter) var(--motion-ease);
 }
 
 @keyframes fade {
@@ -294,7 +452,8 @@ a {
     gap: 8px;
     margin: 0 0 14px;
     font-size: .76rem;
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--green-dark);
@@ -304,12 +463,89 @@ a {
     border-radius: 999px;
 }
 
+/* Mismo punto pulsante que la insignia del landing. */
 .hero__dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--green);
+    box-shadow: 0 0 10px var(--green);
     flex: 0 0 auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .hero__dot {
+        animation: pulse-dot 1.8s infinite ease-in-out;
+    }
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; scale: 1; }
+    50%      { opacity: 0.4; scale: 0.8; }
+}
+
+/* ---------- Dispositivos portados del landing ---------- */
+
+/*
+ * Haz de luz recorriendo el borde. Mismo efecto y misma duracion que
+ * .border-beam del landing, para que las dos paginas se sientan iguales.
+ */
+.border-beam {
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    pointer-events: none;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    -webkit-mask-composite: xor;
+    padding: 1.5px;
+    z-index: 3;
+}
+
+.border-beam::after {
+    content: "";
+    position: absolute;
+    aspect-ratio: 1;
+    width: 140px;
+    background: radial-gradient(circle, rgba(31, 157, 87, .7) 0%, transparent 70%);
+    offset-path: rect(0 auto auto 0 round inherit);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .border-beam::after {
+        animation: border-beam-anim 7s linear infinite;
+    }
+}
+
+@keyframes border-beam-anim {
+    100% { offset-distance: 100%; }
+}
+
+/* Brillo que sigue al puntero, como .glare-card del landing. */
+.glare-card {
+    position: relative;
+}
+
+.glare-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+        rgba(255, 255, 255, .28) 0%, transparent 65%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+    transition-property: opacity;
+    transition-duration: var(--motion-enter);
+    transition-timing-function: var(--motion-ease);
+}
+
+@media (hover: hover) {
+    .glare-card:hover::before {
+        opacity: 1;
+    }
 }
 
 .hero__title {
@@ -381,16 +617,117 @@ a {
 }
 
 /* Marco: radio exterior = radio interior (12) + padding (10) + borde (1). */
-.shot {
-    margin: 0;
-    padding: 10px;
+/*
+ * Panel de inferencia. Encadena foto, deteccion y receta en una sola tarjeta
+ * para que se lea como la salida del modelo y no como decoracion suelta.
+ * Radio exterior 24 = radio interior 12 + padding 11 + borde 1.
+ */
+.panel-ai {
+    padding: 11px;
     background: var(--bg-elev);
     border: 1px solid var(--line);
-    border-radius: 23px;
+    border-radius: 24px;
     box-shadow:
         0 1px 2px rgba(20, 40, 28, .06),
         0 12px 28px rgba(20, 40, 28, .10),
         0 28px 60px rgba(20, 40, 28, .06);
+    /* La inclinacion 3D la escribe el puntero desde app.js. */
+    transform-style: preserve-3d;
+    transition-property: transform, box-shadow;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+.panel-ai__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 3px 5px 11px;
+}
+
+.panel-ai__status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--green-dark);
+}
+
+/* El panel es una muestra, no una lectura en vivo: se dice explicitamente. */
+.panel-ai__tag {
+    font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", monospace;
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 2px 9px;
+}
+
+.panel-ai__block {
+    padding: 13px 5px 3px;
+    border-top: 1px solid var(--line);
+}
+
+.panel-ai__block--result {
+    padding-bottom: 5px;
+}
+
+.panel-ai__label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 0 9px;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+}
+
+.panel-ai__count {
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--green-dark);
+}
+
+.detections {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+}
+
+.detection {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    border: 1px solid #c8e8d6;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: .8rem;
+    font-weight: 600;
+}
+
+/* La confianza es el dato que convierte la pildora en salida de un modelo. */
+.detection b {
+    font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", monospace;
+    font-size: .72rem;
+    font-weight: 700;
+    opacity: .72;
+}
+
+.shot {
+    margin: 0;
     rotate: -1.6deg;
 }
 
@@ -406,61 +743,11 @@ a {
     outline-offset: -1px;
 }
 
-.shot__caption {
-    margin: 9px 2px 1px;
-    font-size: .74rem;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--ink-faint);
-}
-
-.floaties {
-    list-style: none;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin: 0;
-    padding: 0;
-}
-
-.floaties--top {
-    position: absolute;
-    top: -16px;
-    left: -14px;
-    max-width: 78%;
-}
-
-.floaty {
-    background: var(--bg-elev);
-    color: var(--green-dark);
-    border: 1px solid #c8e8d6;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: .8rem;
-    font-weight: 600;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(20, 40, 28, .10);
-}
-
-.minicard {
-    position: absolute;
-    right: -18px;
-    bottom: -26px;
-    width: min(252px, 82%);
-    background: var(--bg-elev);
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    padding: 14px 15px;
-    box-shadow:
-        0 1px 2px rgba(20, 40, 28, .06),
-        0 14px 32px rgba(20, 40, 28, .13);
-    rotate: 1.4deg;
-}
-
 .minicard__title {
     margin: 0 0 7px;
     font-size: .95rem;
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
     line-height: 1.25;
 }
 
@@ -492,24 +779,28 @@ a {
 /* ---------- Entrada escalonada del hero ---------- */
 
 /*
- * El orden comunica jerarquia: etiqueta, titulo, texto, acciones, datos y
- * visual, separados 100ms. Solo ocurre una vez, al cargar.
+ * El orden comunica jerarquia: etiqueta, visual, texto, acciones y datos.
+ * Solo ocurre una vez, al cargar.
+ *
+ * El titular NO entra como bloque: lo animan sus palabras una a una con
+ * kinetic-reveal, igual que el landing. Animarlo ademas como bloque
+ * superpondria dos entradas sobre el mismo texto.
  */
 @media (prefers-reduced-motion: no-preference) {
     .hero__eyebrow,
-    .hero__title,
     .hero__subtitle,
     .hero__actions,
     .hero__facts,
     .hero__visual {
-        animation: hero-enter 300ms ease-out both;
+        animation: hero-enter var(--motion-enter) var(--motion-ease) both;
     }
 
-    .hero__title    { animation-delay: 100ms; }
-    .hero__subtitle { animation-delay: 200ms; }
-    .hero__actions  { animation-delay: 300ms; }
-    .hero__facts    { animation-delay: 400ms; }
-    .hero__visual   { animation-delay: 500ms; }
+    .hero__eyebrow  { animation-delay: calc(var(--motion-stagger) * 0); }
+    .hero__visual   { animation-delay: calc(var(--motion-stagger) * 2); }
+    /* El cuerpo arranca cuando la ultima palabra del titular ya ha entrado. */
+    .hero__subtitle { animation-delay: calc(var(--motion-stagger) * 7); }
+    .hero__actions  { animation-delay: calc(var(--motion-stagger) * 8); }
+    .hero__facts    { animation-delay: calc(var(--motion-stagger) * 9); }
 }
 
 @keyframes hero-enter {
@@ -533,7 +824,7 @@ a {
     .hero__actions,
     .hero__facts,
     .hero__visual {
-        animation: hero-fade 300ms ease-out both;
+        animation: hero-fade var(--motion-enter) var(--motion-ease) both;
     }
 }
 
@@ -566,7 +857,9 @@ a {
     padding: 40px 24px;
     text-align: center;
     cursor: pointer;
-    transition: border-color .18s, background .18s;
+    transition-property: border-color, background-color;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
     outline: none;
 }
 
@@ -591,7 +884,7 @@ a {
 /* Destello al llegar desde el boton "Subir mi foto". */
 .dropzone.is-highlighted {
     border-color: var(--green);
-    animation: pulse 1.4s ease;
+    animation: pulse 1.4s var(--motion-ease);
 }
 
 @keyframes pulse {
@@ -769,8 +1062,8 @@ a {
     flex-direction: column;
     gap: 14px;
     transition-property: box-shadow, translate;
-    transition-duration: 200ms;
-    transition-timing-function: ease-out;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
 }
 
 @media (hover: hover) {
@@ -855,7 +1148,8 @@ a {
 }
 
 .ingredient__icon {
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
     flex: 0 0 auto;
     line-height: 1.4;
 }
@@ -895,7 +1189,8 @@ a {
 
 .steps li::marker {
     color: var(--green);
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
 }
 
 /* --- Tip del chef --- */
@@ -924,7 +1219,8 @@ a {
 .cheftip__label {
     display: block;
     font-size: .74rem;
-    font-weight: 700;
+    font-family: var(--display);
+    font-weight: 800;
     letter-spacing: .07em;
     text-transform: uppercase;
     color: #9a5e15;
@@ -1188,7 +1484,7 @@ a {
     font-size: .92rem;
     font-weight: 600;
     box-shadow: var(--shadow-md);
-    animation: rise .22s ease;
+    animation: rise var(--motion-enter) var(--motion-ease);
 }
 
 @keyframes rise {
@@ -1234,27 +1530,62 @@ a {
         justify-content: center;
     }
 
+    /* En una columna el panel se endereza y el texto vuelve a la izquierda. */
     .shot {
         rotate: 0deg;
     }
 
-    .floaties--top {
-        left: 0;
-        right: 0;
-        max-width: none;
-        justify-content: center;
-    }
-
-    .minicard {
-        position: static;
-        width: 100%;
-        margin-top: 18px;
-        rotate: 0deg;
+    .panel-ai {
         text-align: left;
     }
 }
 
 @media (max-width: 680px) {
+    /*
+     * La barra superior venia del landing con los controles en una sola fila,
+     * y a 375px sumaban 308px que se salian de la pantalla: la pagina ganaba
+     * scroll horizontal. Aqui los controles pueden envolver y el conmutador
+     * de dock se oculta, porque en movil no aporta nada.
+     */
+    .topbar__auth {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .topbar__auth .nav-mode-btn {
+        display: none;
+    }
+
+    /*
+     * La topbar pegada del landing venia con nowrap !important y los tres
+     * grupos no caben en 375px. Aqui vuelve a envolver y la navegacion baja a
+     * su propia fila, que es como se comportaba antes de unificar las barras.
+     */
+    .topbar__inner {
+        flex-wrap: wrap !important;
+    }
+
+    .topbar__nav {
+        order: 3;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* El dock es fijo: se ancla a los margenes en vez de centrarse y salirse. */
+    .magic-dock-container {
+        left: 12px;
+        right: 12px;
+        transform: none;
+        max-width: none;
+    }
+
+    .magic-dock {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
     .hero {
         padding: 34px 18px 34px;
         border-radius: 18px;
@@ -1305,7 +1636,7 @@ a {
  */
 @media (prefers-reduced-motion: reduce) {
     .view.is-active {
-        animation: hero-fade 200ms ease-out both;
+        animation: hero-fade var(--motion-fast) var(--motion-ease) both;
     }
 
     .dropzone.is-highlighted {
@@ -1313,7 +1644,7 @@ a {
     }
 
     .toast {
-        animation: hero-fade 200ms ease-out both;
+        animation: hero-fade var(--motion-fast) var(--motion-ease) both;
     }
 
     .card {
@@ -1322,5 +1653,878 @@ a {
 
     .loader__spinner {
         animation-duration: 1.6s;
+    }
+}
+
+
+/* ==========================================================================
+   SmartChef AI — Magic UI Modern Animation Extensions (Non-destructive)
+   ========================================================================== */
+
+/*
+ * Magic UI Shimmer Effect en Boton Principal.
+ * Sin !important: esta regla gana por orden sobre .btn--primary de arriba,
+ * y asi .btn--primary.btn--sweep todavia puede ajustarla por especificidad.
+ */
+.btn--primary {
+    background: linear-gradient(110deg, var(--green) 0%, #2db469 45%, #6beaa3 50%, #2db469 55%, var(--green) 100%);
+    background-size: 200% 100%;
+    animation: btn-shimmer 3.5s infinite linear;
+    box-shadow: 0 4px 14px rgba(31, 157, 87, 0.28);
+    transition-property: transform, box-shadow, scale;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+@media (hover: hover) {
+    .btn--primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(31, 157, 87, 0.38);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .btn--primary {
+        animation: none;
+        background: var(--green);
+    }
+
+    .btn--primary:hover:not(:disabled) {
+        transform: none;
+    }
+}
+
+/*
+ * El primario ya se pinta solo: el brillo hace de relleno, asi que su
+ * barrido se limita al levantamiento y a la flecha. Los secundarios si
+ * necesitan el circulo verde para llegar al mismo estado.
+ */
+.btn--primary.btn--sweep .btn__fill {
+    display: none;
+}
+
+@keyframes btn-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Dropzone interactiva con microinteracción */
+.dropzone {
+    transition-property: border-color, background-color, box-shadow !important;
+    transition-duration: var(--motion-fast) !important;
+    transition-timing-function: var(--motion-ease) !important;
+}
+
+@media (hover: hover) {
+    .dropzone:hover {
+        border-color: var(--green) !important;
+        background: var(--green-soft) !important;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(31, 157, 87, 0.14) !important;
+    }
+}
+
+.dropzone__icon {
+    transition: transform var(--motion-enter) var(--motion-ease) !important;
+}
+
+@media (hover: hover) {
+    .dropzone:hover .dropzone__icon {
+        transform: translateY(-6px) scale(1.12);
+    }
+}
+
+/* Tarjetas con elevación suave y resplandor al hover */
+.card {
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease) !important;
+}
+
+@media (hover: hover) {
+    .card:hover {
+        transform: translateY(-5px);
+        border-color: var(--green) !important;
+        box-shadow: 0 16px 36px rgba(20, 40, 28, 0.12) !important;
+    }
+}
+
+/* Spinner con brillo radiante */
+.loader__spinner {
+    border-top-color: var(--green) !important;
+    box-shadow: 0 0 16px rgba(31, 157, 87, 0.45);
+}
+
+
+/* ==========================================================================
+   SmartChef AI — Magic UI Full Feature Expansion
+   Dock Mode, Kinetic Text, Text-Animate, Dark Mode, Interactive Modal
+   ========================================================================== */
+
+/* Dark Mode Palette */
+html[data-theme="dark"] {
+    --bg: #0C140F;
+    --bg-elev: #15221B;
+    --cream: #192921;
+    --cream-deep: #1E3228;
+    --ink: #F2F5F3;
+    --ink-soft: #A0B0A7;
+    --ink-faint: #6C7D73;
+    --line: rgba(255, 255, 255, 0.1);
+    --green-soft: rgba(40, 185, 101, 0.15);
+    --amber-soft: rgba(245, 158, 11, 0.15);
+    --red-soft: rgba(239, 68, 68, 0.15);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 16px 36px rgba(0, 0, 0, 0.5);
+}
+
+/* 60fps GPU Circular View Transition */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+::view-transition-old(root) {
+    z-index: 1;
+}
+::view-transition-new(root) {
+    z-index: 9999;
+    animation: var(--motion-enter) var(--motion-ease) theme-circular-wipe forwards;
+}
+
+@keyframes theme-circular-wipe {
+    from {
+        clip-path: circle(0px at var(--reveal-x, 50%) var(--reveal-y, 50%));
+    }
+    to {
+        clip-path: circle(var(--reveal-radius, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%));
+    }
+}
+
+/* Boton Conmutador Topbar -> Dock */
+.nav-mode-btn {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 0.82rem;
+    padding: 7px 14px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition-property: background-color, border-color, color, scale;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+    box-shadow: var(--shadow-sm);
+}
+
+@media (hover: hover) {
+    .nav-mode-btn:hover {
+        background: var(--green-soft);
+        border-color: var(--green);
+        color: var(--green-dark);
+        transform: translateY(-2px);
+    }
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+    box-shadow: var(--shadow-sm);
+}
+
+@media (hover: hover) {
+    .theme-toggle-btn:hover {
+        transform: scale(1.08);
+        border-color: var(--green);
+    }
+}
+
+.theme-toggle-icon {
+    font-size: 1.1rem;
+    pointer-events: none;
+}
+
+/* Magic UI Interactive Hover Button para Iniciar Sesion */
+.interactive-hover-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 18px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    color: var(--ink) !important;
+    font-weight: 600;
+    font-size: 0.88rem;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+    user-select: none;
+    isolation: isolate;
+}
+
+.interactive-hover-btn .btn-bg-fill {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    transform: translateY(-50%) scale(0);
+    transition: transform var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.interactive-hover-btn .btn-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 8px;
+    transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.interactive-hover-btn .btn-text {
+    position: relative;
+    z-index: 2;
+    transition: transform var(--motion-enter) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.interactive-hover-btn .btn-arrow {
+    position: relative;
+    z-index: 2;
+    display: inline-block;
+    margin-left: 5px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+    pointer-events: none;
+}
+
+@media (hover: hover) {
+    .interactive-hover-btn:hover {
+        transform: translateY(-2px);
+        border-color: var(--green);
+        box-shadow: 0 6px 18px rgba(31, 157, 87, 0.25);
+    }
+}
+
+@media (hover: hover) {
+    .interactive-hover-btn:hover .btn-bg-fill {
+        transform: translateY(-50%) scale(26);
+    }
+}
+
+@media (hover: hover) {
+    .interactive-hover-btn:hover .btn-dot {
+        opacity: 0;
+        transform: scale(0.3);
+    }
+}
+
+@media (hover: hover) {
+    .interactive-hover-btn:hover .btn-text {
+        color: #FFFFFF !important;
+        transform: translateX(-3px);
+    }
+}
+
+@media (hover: hover) {
+    .interactive-hover-btn:hover .btn-arrow {
+        opacity: 1;
+        color: #FFFFFF;
+        transform: translateX(0);
+    }
+}
+
+/* Mismo pulsado que .btn: el boton del topbar no era la excepcion. */
+.interactive-hover-btn:not(:disabled):active {
+    scale: var(--motion-press);
+}
+
+/*
+ * Sin movimiento: se cae el barrido y el levantamiento. El hover queda en
+ * borde verde y texto verde oscuro, porque el blanco del estado pintado
+ * seria ilegible sobre el fondo claro que queda al ocultar el circulo.
+ */
+@media (prefers-reduced-motion: reduce) {
+    .interactive-hover-btn:not(:disabled):active {
+        scale: 1;
+    }
+
+    .interactive-hover-btn .btn-bg-fill {
+        display: none;
+    }
+
+    .interactive-hover-btn:hover {
+        transform: none;
+    }
+
+    .interactive-hover-btn:hover .btn-text {
+        color: var(--green-dark) !important;
+        transform: none;
+    }
+
+    .interactive-hover-btn:hover .btn-dot {
+        opacity: 1;
+        transform: none;
+    }
+
+    .interactive-hover-btn:hover .btn-arrow {
+        color: var(--green-dark);
+        transform: none;
+    }
+}
+
+/* Magic UI Kinetic Text */
+.kinetic-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.28em;
+}
+
+/*
+ * El estado oculto vive en el fotograma inicial, NO en la regla base: si la
+ * animacion no llega a ejecutarse (pestana en segundo plano, CSS que no carga,
+ * motor que la descarta), la palabra se queda visible en lugar de desaparecer.
+ */
+.kinetic-word {
+    display: inline-block;
+    animation: kinetic-reveal var(--motion-enter) var(--motion-ease) both;
+    animation-delay: var(--d, 0ms);
+}
+
+@keyframes kinetic-reveal {
+    from {
+        opacity: 0;
+        translate: 0 20px;
+        rotate: 1.5deg;
+    }
+    to {
+        opacity: 1;
+        translate: 0 0;
+        rotate: 0deg;
+    }
+}
+
+/* Sin movimiento: el titular solo aparece, sin desplazarse ni girar. */
+@media (prefers-reduced-motion: reduce) {
+    .kinetic-word {
+        animation-name: hero-fade;
+    }
+}
+
+/*
+ * Entrada de las tarjetas de receta.
+ * Las 3 tarjetas entran separadas por --motion-stagger, y dentro de cada una
+ * el contenido sigue la misma cadencia: titulo, descripcion, pasos y tip.
+ * Misma duracion, curva, desplazamiento y desenfoque que el hero.
+ */
+.text-animate-card {
+    animation: card-enter var(--motion-enter) var(--motion-ease) both;
+}
+
+.text-animate-card:nth-child(1) { animation-delay: calc(var(--motion-stagger) * 0); }
+.text-animate-card:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 1); }
+.text-animate-card:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 2); }
+
+@keyframes card-enter {
+    from {
+        opacity: 0;
+        filter: blur(var(--motion-blur));
+        translate: 0 var(--motion-shift);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0);
+        translate: 0 0;
+    }
+}
+
+.text-animate-card .card__title {
+    animation: text-reveal-item var(--motion-enter) var(--motion-ease) both;
+    animation-delay: calc(var(--motion-stagger) * 1);
+}
+
+.text-animate-card .card__desc {
+    animation: text-reveal-item var(--motion-enter) var(--motion-ease) both;
+    animation-delay: calc(var(--motion-stagger) * 2);
+}
+
+.text-animate-item {
+    animation: text-reveal-item var(--motion-enter) var(--motion-ease) both;
+}
+
+.text-animate-card .steps li:nth-child(1) { animation-delay: calc(var(--motion-stagger) * 3); }
+.text-animate-card .steps li:nth-child(2) { animation-delay: calc(var(--motion-stagger) * 4); }
+.text-animate-card .steps li:nth-child(3) { animation-delay: calc(var(--motion-stagger) * 5); }
+.text-animate-card .steps li:nth-child(4) { animation-delay: calc(var(--motion-stagger) * 6); }
+.text-animate-card .steps li:nth-child(5) { animation-delay: calc(var(--motion-stagger) * 7); }
+
+.text-animate-card .cheftip {
+    animation: text-reveal-item var(--motion-enter) var(--motion-ease) both;
+    animation-delay: calc(var(--motion-stagger) * 8);
+}
+
+@keyframes text-reveal-item {
+    0% {
+        opacity: 0;
+        transform: translateY(10px);
+        filter: blur(3px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+/* Magic UI Modal de Autenticacion Estilizado */
+.modal__backdrop {
+    background: rgba(12, 20, 15, 0.60) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.modal__box {
+    border-radius: 20px !important;
+    background: var(--bg-elev) !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3) !important;
+    animation: modal-pop var(--motion-enter) var(--motion-ease) both;
+    position: relative;
+    overflow: hidden;
+}
+
+@keyframes modal-pop {
+    from { opacity: 0; transform: scale(0.94) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal__box::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green) 0%, var(--amber) 100%);
+}
+
+.tabs {
+    background: var(--cream) !important;
+    padding: 4px !important;
+    border-radius: 999px !important;
+    border: 1px solid var(--line) !important;
+}
+
+.tab {
+    border-radius: 999px !important;
+    transition-property: background-color, color, box-shadow !important;
+    transition-duration: var(--motion-fast) !important;
+    transition-timing-function: var(--motion-ease) !important;
+}
+
+.tab.is-active {
+    background: var(--bg-elev) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    color: var(--green-dark) !important;
+}
+
+.field__input {
+    background: var(--cream) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 12px !important;
+    transition-property: border-color, box-shadow !important;
+    transition-duration: var(--motion-fast) !important;
+    transition-timing-function: var(--motion-ease) !important;
+}
+
+.field__input:focus {
+    border-color: var(--green) !important;
+    box-shadow: 0 0 0 3px rgba(31, 157, 87, 0.18) !important;
+    outline: none;
+}
+
+/* Magic UI Dock Flotante */
+.magic-dock-container {
+    position: fixed;
+    bottom: 22px;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 990;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    background: var(--bg-elev);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--line);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease);
+}
+
+body[data-nav-mode="topbar"] .magic-dock-container {
+    transform: translateX(-50%) translateY(120px) scale(0.9);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.dock-icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--cream);
+    border: 1px solid var(--line);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    position: relative;
+    transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+}
+
+@media (hover: hover) {
+    .dock-icon-btn:hover {
+        transform: scale(1.35) translateY(-8px);
+        background: var(--green-soft);
+        border-color: var(--green);
+        z-index: 10;
+    }
+}
+
+.dock-icon-btn.is-active {
+    background: var(--green);
+    color: #fff;
+    border-color: var(--green-dark);
+}
+
+.dock-icon-btn.dock-primary {
+    background: var(--green);
+    color: #FFFFFF;
+}
+
+.dock-icon-btn.dock-mode-switch-btn {
+    background: var(--green-soft);
+    border-color: var(--green);
+    color: var(--green-dark);
+}
+
+.dock-icon-btn::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--ink);
+    color: var(--bg-elev);
+    font-size: 0.72rem;
+    font-family: var(--display);
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+@media (hover: hover) {
+    .dock-icon-btn:hover::before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+.dock-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--line);
+    margin: 0 4px;
+}
+
+/* Modo Dock: Cápsula flotante superior con el logo */
+body[data-nav-mode="dock"] .topbar {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom-color: transparent !important;
+    pointer-events: none;
+}
+
+body[data-nav-mode="dock"] .topbar__inner {
+    padding-top: 14px;
+}
+
+body[data-nav-mode="dock"] .brand {
+    pointer-events: auto;
+    background: var(--bg-elev);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--line);
+    padding: 7px 18px;
+    border-radius: 999px;
+    box-shadow: var(--shadow-md);
+    transition-property: translate, border-color, box-shadow;
+    transition-duration: var(--motion-enter);
+    transition-timing-function: var(--motion-ease);
+}
+
+@media (hover: hover) {
+    body[data-nav-mode="dock"] .brand:hover {
+        transform: translateY(-2px);
+        border-color: var(--green);
+    }
+}
+
+body[data-nav-mode="dock"] .topbar__nav {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-16px);
+    transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+}
+
+body[data-nav-mode="dock"] .topbar__auth {
+    pointer-events: auto;
+}
+
+body[data-nav-mode="dock"] .nav-mode-btn,
+body[data-nav-mode="dock"] .topbar__auth .interactive-hover-btn {
+    display: none;
+}
+
+body[data-nav-mode="dock"] .theme-toggle-btn {
+    box-shadow: var(--shadow-md);
+}
+
+
+/* ==========================================================================
+   UNIFIED DESIGN SYSTEM & TYPOGRAPHY HARMONIZATION
+   Exact parity with landing-preview.html (Plus Jakarta Sans, Inter, JetBrains Mono)
+   ========================================================================== */
+
+:root {
+    --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif !important;
+    --display: "Plus Jakarta Sans", "Inter", sans-serif !important;
+    --mono: "JetBrains Mono", monospace !important;
+    --font: var(--sans) !important;
+}
+
+body {
+    font-family: var(--sans) !important;
+    color: var(--ink) !important;
+    background-color: var(--bg) !important;
+}
+
+/* Headings Unificados */
+h1, h2, h3, h4, h5, h6,
+.hero__title,
+.view__title,
+.section-title,
+.panel__title,
+.card__title,
+.modal__title,
+.brand {
+    font-family: var(--display) !important;
+    letter-spacing: -0.025em !important;
+}
+
+.hero__title {
+    font-size: clamp(2rem, 3.8vw, 3rem) !important;
+    font-weight: 800 !important;
+    line-height: 1.15 !important;
+    margin-bottom: 18px !important;
+}
+
+.hero__subtitle {
+    font-size: 1.05rem !important;
+    line-height: 1.65 !important;
+    color: var(--ink-soft) !important;
+}
+
+.view__title {
+    font-size: 2rem !important;
+    font-weight: 800 !important;
+    margin-bottom: 8px !important;
+}
+
+.section-title, .panel__title {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+}
+
+.card__title {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+}
+
+/* Monospace Unificado para Métricas, Tags y Chips */
+.hero__facts strong,
+.chip,
+.ingredient__qty,
+.number-ticker,
+.minicard__meta {
+    font-family: var(--mono) !important;
+}
+
+.hero__facts strong {
+    font-size: 1.45rem !important;
+    font-weight: 700 !important;
+}
+
+/* Botones y Navegación Unificados */
+.btn,
+.navlink,
+.nav-mode-btn,
+.tab {
+    font-family: var(--display) !important;
+    font-weight: 700 !important;
+}
+
+/* Topbar Unificada sin saltos de línea */
+.topbar {
+    background: var(--topbar-bg, rgba(249, 248, 245, 0.90)) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+}
+
+.topbar__inner {
+    max-width: 1220px !important;
+    height: 72px !important;
+    padding: 0 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: nowrap !important;
+    gap: 16px !important;
+}
+
+.brand {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-weight: 800 !important;
+    font-size: 1.25rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+.brand__mark {
+    width: 38px !important;
+    height: 38px !important;
+    background: var(--green-soft) !important;
+    border: 1px solid rgba(30, 142, 77, 0.2) !important;
+    border-radius: var(--radius-sm, 10px) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.25rem !important;
+    box-shadow: 0 2px 6px rgba(30, 142, 77, 0.12) !important;
+    flex-shrink: 0 !important;
+    transition-property: rotate, scale;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+/* El icono gira al pasar sobre la marca, igual que .brand-icon del landing. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .brand:hover .brand__mark {
+        rotate: -10deg;
+        scale: 1.05;
+    }
+}
+
+.brand__ai {
+    display: inline-block !important;
+    white-space: nowrap !important;
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%) !important;
+    color: #FFFFFF !important;
+    font-size: 0.72rem !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+    margin-left: 6px !important;
+    vertical-align: middle !important;
+}
+
+.topbar__nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    white-space: nowrap !important;
+    flex: initial !important;
+}
+
+.navlink {
+    white-space: nowrap !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+}
+
+.topbar__auth {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 1100px) {
+    .topbar__nav {
+        display: none !important;
+    }
+}
+
+/*
+ * Cierre de desbordamiento horizontal en movil.
+ * La topbar unificada se fuerza a una sola fila con nowrap !important mas
+ * abajo en la hoja, asi que no se puede envolver: en su lugar se encogen los
+ * dos extremos hasta que marca + tema + acceso caben en 375px.
+ */
+@media (max-width: 680px) {
+    .brand__ai {
+        display: none !important;
+    }
+
+    .topbar__auth .interactive-hover-btn {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    .topbar__auth .btn-arrow {
+        display: none !important;
     }
 }

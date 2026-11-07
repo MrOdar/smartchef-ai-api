@@ -1,274 +1,2220 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es-PE" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>SmartChef AI</title>
-    <meta name="description" content="Fotografia tu despensa y recibe 3 recetas de aprovechamiento generadas con Google Gemini.">
-    <link rel="stylesheet" href="styles.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127859;</text></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SmartChef AI — Tu Chef Inteligente de Aprovechamiento con Google Gemini 3.8. Transforma los ingredientes de tu refrigeradora en recetas gourmet al instante." />
+  <title>SmartChef AI — Powered by Google Gemini 3.8 Flash</title>
+  
+  <!-- Tipografías de alta gama (Inter, Plus Jakarta Sans, JetBrains Mono) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127859;</text></svg>">
+
+  <style>
+    /* ==========================================================================
+       SmartChef AI — Magic UI & EcoCommute Design System
+       Google Gemini 3.8 Flash Vision Edition
+       ========================================================================== */
+
+    :root, html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #F9F8F5;
+      --bg-alt: #F1EFEA;
+      --card: #FFFFFF;
+      --card-subtle: #F6F4EE;
+      --dark-surface: #0E1B14;
+
+      --ink: #132219;
+      --ink-secondary: #3D4E44;
+      --ink-muted: #6B7C72;
+
+      --accent: #1E8E4D;
+      --accent-hover: #16703B;
+      --accent-soft: #E6F5EC;
+      --accent-bright: #28B965;
+
+      --amber: #D97706;
+      --amber-soft: #FEF3C7;
+      --amber-hover: #B45309;
+
+      --border: rgba(19, 34, 25, 0.08);
+      --border-strong: rgba(19, 34, 25, 0.16);
+
+      --shadow-sm: 0 2px 8px rgba(19, 34, 25, 0.04);
+      --shadow-md: 0 16px 36px -12px rgba(19, 34, 25, 0.08);
+      --shadow-lg: 0 24px 50px -16px rgba(19, 34, 25, 0.12);
+
+      --topbar-bg: rgba(249, 248, 245, 0.90);
+      --dock-bg: rgba(255, 255, 255, 0.88);
+      --dock-border: rgba(19, 34, 25, 0.12);
+      --badge-bg: rgba(30, 142, 77, 0.08);
+      --badge-border: rgba(30, 142, 77, 0.2);
+      --beam-color: rgba(30, 142, 77, 0.7);
+    }
+
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #0C140F;
+      --bg-alt: #111B15;
+      --card: #15221B;
+      --card-subtle: #192921;
+      --dark-surface: #1E3228;
+
+      --ink: #F2F5F3;
+      --ink-secondary: #A0B0A7;
+      --ink-muted: #6C7D73;
+
+      --accent: #28B965;
+      --accent-hover: #1E8E4D;
+      --accent-soft: rgba(40, 185, 101, 0.15);
+      --accent-bright: #4ADE80;
+
+      --amber: #F59E0B;
+      --amber-soft: rgba(245, 158, 11, 0.15);
+      --amber-hover: #D97706;
+
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.16);
+
+      --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 18px 40px -12px rgba(0, 0, 0, 0.5);
+      --shadow-lg: 0 28px 60px -16px rgba(0, 0, 0, 0.65);
+
+      --topbar-bg: rgba(12, 20, 15, 0.90);
+      --dock-bg: rgba(21, 34, 27, 0.88);
+      --dock-border: rgba(255, 255, 255, 0.12);
+      --badge-bg: rgba(40, 185, 101, 0.12);
+      --badge-border: rgba(40, 185, 101, 0.25);
+      --beam-color: rgba(74, 222, 128, 0.8);
+    }
+
+    :root {
+      --sans: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      --display: "Plus Jakarta Sans", "Inter", sans-serif;
+      --mono: "JetBrains Mono", monospace;
+
+      --radius-sm: 10px;
+      --radius-md: 18px;
+      --radius-lg: 26px;
+      --radius-pill: 999px;
+
+      /* ======================================================================
+         Sistema de movimiento compartido con la aplicacion (styles.css).
+         Una sola curva y tres duraciones en todo el producto: el landing y la
+         app deben sentirse como la misma pieza de software.
+         ====================================================================== */
+
+      /* Unica curva de salida. No se usa ninguna otra. */
+      --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+
+      /* Respuesta inmediata: hover, press, color. Nunca por encima de 150ms. */
+      --motion-fast: 150ms;
+      /* Entradas y cambios de estado poco frecuentes. */
+      --motion-enter: 300ms;
+      /* Las salidas son mas cortas que las entradas. */
+      --motion-exit: 150ms;
+
+      /* Desplazamiento y desenfoque de toda entrada escalonada. */
+      --motion-shift: 12px;
+      --motion-blur: 4px;
+      /* Separacion entre elementos de una secuencia. */
+      --motion-stagger: 100ms;
+
+      /* Escala de pulsado. */
+      --motion-press: 0.96;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+    }
+
+    body {
+      font-family: var(--sans);
+      background-color: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      /* Sin transition lenta en body para que el view transition de tema sea instantáneo a 60fps */
+    }
+
+    /* ==================== ANIMATED THEME TOGGLER (VIEW TRANSITION NATIVO A 60FPS) ==================== */
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation: none;
+      mix-blend-mode: normal;
+    }
+    ::view-transition-old(root) {
+      z-index: 1;
+    }
+    ::view-transition-new(root) {
+      z-index: 9999;
+      animation: var(--motion-enter) var(--motion-ease) theme-circular-wipe forwards;
+    }
+
+    @keyframes theme-circular-wipe {
+      from {
+        clip-path: circle(0px at var(--reveal-x, 50%) var(--reveal-y, 50%));
+      }
+      to {
+        clip-path: circle(var(--reveal-radius, 150vmax) at var(--reveal-x, 50%) var(--reveal-y, 50%));
+      }
+    }
+
+    /* Scroll progress bar en el tope */
+    .scroll-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--amber) 100%);
+      width: 0%;
+      z-index: 9999;
+      transition: width 0.08s linear;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ==================== MODO DE NAVEGACIÓN: TOPBAR vs DOCK ==================== */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: var(--topbar-bg);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease);
+    }
+
+    /* Cuando el modo Dock está activo: la barra se vuelve una cápsula flotante con el logo en el tope */
+    body[data-nav-mode="dock"] .topbar {
+      background: transparent;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-bottom-color: transparent;
+      pointer-events: none;
+    }
+
+    body[data-nav-mode="dock"] .topbar-inner {
+      padding-top: 14px;
+    }
+
+    body[data-nav-mode="dock"] .brand {
+      pointer-events: auto;
+      background: var(--card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-strong);
+      padding: 7px 18px;
+      border-radius: var(--radius-pill);
+      box-shadow: var(--shadow-md);
+      transition-property: translate, border-color, box-shadow;
+      transition-duration: var(--motion-enter);
+      transition-timing-function: var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      body[data-nav-mode="dock"] .brand:hover {
+        translate: 0 -2px;
+        border-color: var(--accent);
+        box-shadow: var(--shadow-lg);
+      }
+    }
+
+    body[data-nav-mode="dock"] .nav-links {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-16px);
+      transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+    }
+
+    body[data-nav-mode="dock"] .nav-actions {
+      pointer-events: auto;
+    }
+
+    body[data-nav-mode="dock"] .nav-mode-btn {
+      display: none;
+    }
+
+    body[data-nav-mode="dock"] .topbar .interactive-hover-btn {
+      display: none;
+    }
+
+    body[data-nav-mode="dock"] .theme-toggle-btn {
+      box-shadow: var(--shadow-md);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--ink);
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-soft);
+      border: 1px solid var(--badge-border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 2px 6px rgba(30, 142, 77, 0.12);
+      transition: transform var(--motion-fast) var(--motion-ease);
+      flex-shrink: 0;
+    }
+
+    @media (hover: hover) {
+      .brand:hover .brand-icon {
+        transform: rotate(-10deg) scale(1.05);
+      }
+    }
+
+    .brand-ai-badge {
+      display: inline-block;
+      white-space: nowrap;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      white-space: nowrap;
+    }
+
+    .nav-link {
+      text-decoration: none;
+      color: var(--ink-secondary);
+      font-size: 0.94rem;
+      font-weight: 500;
+      transition: color var(--motion-fast) var(--motion-ease);
+      position: relative;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    @media (hover: hover) {
+      .nav-link:hover {
+        color: var(--accent);
+      }
+    }
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0%;
+      height: 2px;
+      background: var(--accent);
+      transition: width var(--motion-fast) var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .nav-link:hover::after {
+        width: 100%;
+      }
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Botón switcher Topbar -> Dock */
+    .nav-mode-btn {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      color: var(--ink);
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 0.82rem;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition-property: background-color, border-color, color, scale;
+      transition-duration: var(--motion-fast);
+      transition-timing-function: var(--motion-ease);
+      box-shadow: var(--shadow-sm);
+    }
+
+    @media (hover: hover) {
+      .nav-mode-btn:hover {
+        background: var(--bg-alt);
+        border-color: var(--accent);
+        color: var(--accent);
+        transform: translateY(-2px);
+      }
+    }
+
+    /* Theme Switcher Button */
+    .theme-toggle-btn {
+      background: var(--card);
+      border: 1px solid var(--border-strong);
+      color: var(--ink);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (hover: hover) {
+      .theme-toggle-btn:hover {
+        background: var(--bg-alt);
+        transform: scale(1.08);
+        border-color: var(--accent);
+      }
+    }
+
+    .theme-toggle-icon {
+      font-size: 1.15rem;
+      pointer-events: none;
+    }
+
+    /* ==================== 2. INTERACTIVE HOVER BUTTON (100% ESTABLE Y FLUIDO) ==================== */
+    .interactive-hover-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 11px 24px;
+      border-radius: var(--radius-pill);
+      background: var(--card);
+      color: var(--ink) !important;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 0.94rem;
+      text-decoration: none;
+      border: 1px solid var(--border-strong);
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+      user-select: none;
+      isolation: isolate;
+    }
+
+    /* Círculo de fondo expansivo que NO altera el flujo del layout */
+    .interactive-hover-btn .btn-bg-fill {
+      position: absolute;
+      top: 50%;
+      left: 18px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+      transform: translateY(-50%) scale(0);
+      transition: transform var(--motion-enter) var(--motion-ease);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Punto verde inicial */
+    .interactive-hover-btn .btn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      margin-right: 9px;
+      transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-enter) var(--motion-ease);
+      pointer-events: none;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    .interactive-hover-btn .btn-text {
+      position: relative;
+      z-index: 2;
+      transition: transform var(--motion-enter) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .interactive-hover-btn .btn-arrow {
+      position: relative;
+      z-index: 2;
+      display: inline-block;
+      margin-left: 6px;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-fast) var(--motion-ease), color var(--motion-enter) var(--motion-ease);
+      pointer-events: none;
+    }
+
+    /* Estados de hover: CERO saltos o parpadeos */
+    @media (hover: hover) {
+      .interactive-hover-btn:hover {
+        transform: translateY(-2px);
+        border-color: var(--accent);
+        box-shadow: 0 8px 24px rgba(30, 142, 77, 0.28);
+      }
+    }
+
+    @media (hover: hover) {
+      .interactive-hover-btn:hover .btn-bg-fill {
+        transform: translateY(-50%) scale(30);
+      }
+    }
+
+    @media (hover: hover) {
+      .interactive-hover-btn:hover .btn-dot {
+        opacity: 0;
+        transform: scale(0.3);
+      }
+    }
+
+    @media (hover: hover) {
+      .interactive-hover-btn:hover .btn-text {
+        color: #FFFFFF !important;
+        transform: translateX(-4px);
+      }
+    }
+
+    @media (hover: hover) {
+      .interactive-hover-btn:hover .btn-arrow {
+        opacity: 1;
+        color: #FFFFFF;
+        transform: translateX(0);
+      }
+    }
+
+    /* Shimmer Pill Button */
+    .btn-shimmer-pill {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(110deg, var(--accent) 0%, #2db469 45%, #6beaa3 50%, #2db469 55%, var(--accent) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 3s infinite linear;
+      color: #FFFFFF !important;
+      text-decoration: none;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 0.94rem;
+      padding: 12px 26px;
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      box-shadow: 0 4px 14px rgba(30, 142, 77, 0.28);
+      transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .btn-shimmer-pill:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 22px rgba(30, 142, 77, 0.38);
+      }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ==================== 3. KINETIC TEXT & TEXT ANIMATE ==================== */
+    .hero-title {
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: clamp(2.4rem, 4.4vw, 3.6rem);
+      line-height: 1.12;
+      letter-spacing: -0.035em;
+      color: var(--ink);
+      margin-bottom: 22px;
+    }
+
+    /*
+     * El estado oculto vive en el fotograma inicial, NO en la regla base: si la
+     * animacion no llega a ejecutarse (pestana en segundo plano, CSS que no
+     * carga), la palabra se queda visible en lugar de desaparecer.
+     */
+    .kinetic-word {
+      display: inline-block;
+      animation: kinetic-reveal var(--motion-enter) var(--motion-ease) both;
+      animation-delay: var(--d, 0ms);
+    }
+
+    @keyframes kinetic-reveal {
+      from {
+        opacity: 0;
+        translate: 0 22px;
+        rotate: 1.2deg;
+      }
+      to {
+        opacity: 1;
+        translate: 0 0;
+        rotate: 0deg;
+      }
+    }
+
+    @keyframes kinetic-fade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .hero-title-highlight {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--amber) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: inline-block;
+    }
+
+    /* ==================== 4. BORDER BEAM (MAGIC UI) ==================== */
+    .border-beam-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-lg);
+    }
+
+    .border-beam {
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      pointer-events: none;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      padding: 1.5px;
+      z-index: 3;
+    }
+
+    .border-beam::after {
+      content: "";
+      position: absolute;
+      aspect-ratio: 1;
+      width: 140px;
+      background: radial-gradient(circle, var(--beam-color) 0%, transparent 70%);
+      offset-path: rect(0 auto auto 0 round inherit);
+      animation: border-beam-anim 7s linear infinite;
+    }
+
+    @keyframes border-beam-anim {
+      100% {
+        offset-distance: 100%;
+      }
+    }
+
+    /* ==================== 5. GLARE HOVER (3D TILT & GLOSS) ==================== */
+    .glare-card {
+      transition: transform var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease);
+      transform-style: preserve-3d;
+      will-change: transform;
+      position: relative;
+    }
+
+    .glare-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255, 255, 255, 0.18) 0%, transparent 65%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--motion-enter) var(--motion-ease);
+      z-index: 2;
+    }
+
+    @media (hover: hover) {
+      .glare-card:hover::before {
+        opacity: 1;
+      }
+    }
+
+    /* ==================== 1. HERO SECTION ==================== */
+    .hero-section {
+      min-height: 88vh;
+      padding-top: 115px;
+      padding-bottom: 70px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 85% 20%, rgba(30, 142, 77, 0.09) 0%, transparent 45%),
+                  radial-gradient(circle at 10% 80%, rgba(217, 119, 6, 0.07) 0%, transparent 45%);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 0.95fr;
+      gap: 56px;
+      align-items: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-bright);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-bright);
+      animation: pulse-dot 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hero-desc {
+      font-size: 1.12rem;
+      color: var(--ink-secondary);
+      line-height: 1.65;
+      margin-bottom: 34px;
+      max-width: 540px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 42px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      padding-top: 26px;
+      border-top: 1px solid var(--border);
+    }
+
+    .hero-stat-value {
+      font-family: var(--mono);
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .hero-stat-label {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    /* Mockup Card Interactive */
+    .hero-visual-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .mockup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mockup-status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .mockup-fridge-preview {
+      background: var(--bg-alt);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 18px;
+      border: 1px dashed var(--border-strong);
+    }
+
+    .fridge-tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .fridge-tag {
+      background: var(--card);
+      padding: 5px 11px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .recipe-card-preview {
+      background: linear-gradient(145deg, var(--accent-soft) 0%, var(--card) 100%);
+      border: 1px solid rgba(30, 142, 77, 0.2);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+
+    .recipe-meta-row {
+      display: flex;
+      gap: 14px;
+      margin-top: 8px;
+      font-size: 0.84rem;
+      color: var(--ink-secondary);
+      font-family: var(--mono);
+    }
+
+    /* ==================== MAGIC UI: MARQUEE ==================== */
+    .marquee-container {
+      width: 100%;
+      overflow: hidden;
+      padding: 24px 0;
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+    }
+
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      gap: 16px;
+      animation: marquee-scroll 28s linear infinite;
+    }
+
+    @media (hover: hover) {
+      .marquee-track:hover {
+        animation-play-state: paused;
+      }
+    }
+
+    .marquee-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 8px 18px;
+      border-radius: var(--radius-pill);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--ink);
+      box-shadow: var(--shadow-sm);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    @keyframes marquee-scroll {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* ==================== SECCIONES GLOBALES ==================== */
+    .section {
+      padding: 96px 0;
+      position: relative;
+    }
+
+    .section-alt {
+      background: var(--bg-alt);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 56px auto;
+    }
+
+    .section-eyebrow {
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+      background: var(--badge-bg);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--badge-border);
+    }
+
+    .section-title {
+      font-family: var(--display);
+      font-size: clamp(1.8rem, 3.2vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      font-size: 1.05rem;
+      color: var(--ink-secondary);
+      line-height: 1.6;
+    }
+
+    /* ==================== 2. ¿CÓMO FUNCIONA? ==================== */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+    }
+
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 30px;
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-number {
+      font-family: var(--mono);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 18px;
+      display: inline-block;
+      opacity: 0.9;
+    }
+
+    .step-card h3 {
+      font-family: var(--display);
+      font-size: 1.28rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--ink);
+    }
+
+    .step-card p {
+      color: var(--ink-secondary);
+      font-size: 0.94rem;
+      line-height: 1.65;
+    }
+
+    /* ==================== 3. BENTO GRID (MAGIC UI) ==================== */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .bento-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 34px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .bento-col-2 {
+      grid-column: span 2;
+    }
+
+    .bento-header {
+      margin-bottom: 24px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+    }
+
+    .bento-card h3 {
+      font-family: var(--display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.3;
+      margin-bottom: 10px;
+    }
+
+    .bento-card p {
+      color: var(--ink-secondary);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .bento-visual {
+      margin-top: 20px;
+      background: var(--bg-alt);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      border: 1px solid var(--border);
+      position: relative;
+      z-index: 2;
+    }
+
+    .bento-checklist-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--card);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 0.86rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+    }
+
+    .bento-checklist-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .bento-tag-pill {
+      font-size: 0.75rem;
+      font-family: var(--mono);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .tag-danger {
+      background: #FEE2E2;
+      color: #991B1B;
+    }
+
+    .tag-success {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .bento-pills-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .bento-pill-feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: var(--radius-pill);
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ==================== 4. CALCULADORA DE AHORRO ==================== */
+    .calculator-container {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 44px;
+      box-shadow: var(--shadow-lg);
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 50px;
+      align-items: center;
+    }
+
+    .calc-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .slider-label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .slider-value-badge {
+      font-family: var(--mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 10px;
+      border-radius: 8px;
+    }
+
+    .calc-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--border-strong);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .calc-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 3px solid #FFFFFF;
+      box-shadow: 0 2px 8px rgba(30, 142, 77, 0.4);
+      cursor: pointer;
+      transition: transform var(--motion-fast) var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .calc-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+      }
+    }
+
+    .slider-hint {
+      font-size: 0.82rem;
+      color: var(--ink-muted);
+      margin-top: 2px;
+    }
+
+    .calc-results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .calc-result-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px 20px;
+      text-align: left;
+      transition-property: border-color, background-color, box-shadow;
+      transition-duration: var(--motion-fast);
+      transition-timing-function: var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .calc-result-card:hover {
+        border-color: var(--accent);
+        background: var(--card);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+
+    .number-ticker {
+      font-family: var(--mono);
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1.15;
+      margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .calc-result-label {
+      font-size: 0.86rem;
+      color: var(--ink-secondary);
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    /* ==================== 8. MAGIC UI DOCK (CON ANIMACIÓN DE ENTRADA Y SALIDA) ==================== */
+    .magic-dock-container {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+      z-index: 990;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      border-radius: var(--radius-pill);
+      background: var(--dock-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--dock-border);
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+      transition: transform var(--motion-enter) var(--motion-ease), opacity var(--motion-enter) var(--motion-ease);
+    }
+
+    /* Cuando el modo Topbar está activo, el Dock se repliega hacia abajo */
+    body[data-nav-mode="topbar"] .magic-dock-container {
+      transform: translateX(-50%) translateY(120px) scale(0.9);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .dock-icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--ink);
+      text-decoration: none;
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      position: relative;
+      transition: transform var(--motion-fast) var(--motion-ease), background-color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .dock-icon-btn:hover {
+        transform: scale(1.35) translateY(-8px);
+        background: var(--bg-alt);
+        border-color: var(--accent);
+        z-index: 10;
+      }
+    }
+
+    .dock-icon-btn.dock-primary {
+      background: var(--accent);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    @media (hover: hover) {
+      .dock-icon-btn.dock-primary:hover {
+        background: var(--accent-hover);
+      }
+    }
+
+    .dock-mode-switch-btn {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Tooltip en Dock */
+    .dock-icon-btn::before {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(4px);
+      background: var(--ink);
+      color: var(--bg);
+      font-size: 0.72rem;
+      font-family: var(--display);
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+      box-shadow: var(--shadow-md);
+    }
+
+    @media (hover: hover) {
+      .dock-icon-btn:hover::before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    .dock-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border-strong);
+      margin: 0 4px;
+    }
+
+    /* ==================== 5. BANNER FINAL CTA ==================== */
+    .cta-banner-section {
+      padding: 100px 0 60px 0;
+      background: radial-gradient(circle at 50% 50%, rgba(30, 142, 77, 0.12) 0%, transparent 65%);
+    }
+
+    .cta-banner-card {
+      background: linear-gradient(135deg, #132219 0%, #1c3826 100%);
+      color: #FFFFFF;
+      border-radius: var(--radius-lg);
+      padding: 70px 48px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 30px 60px -20px rgba(19, 34, 25, 0.5);
+    }
+
+    .cta-banner-title {
+      font-family: var(--display);
+      font-size: clamp(2rem, 3.8vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .cta-banner-desc {
+      font-size: 1.15rem;
+      color: #A0B3A7;
+      max-width: 600px;
+      margin: 0 auto 38px auto;
+      line-height: 1.6;
+    }
+
+    .btn-cta-giant {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: linear-gradient(110deg, #22C55E 0%, #4ADE80 45%, #86EFAC 50%, #4ADE80 55%, #22C55E 100%);
+      background-size: 200% 100%;
+      animation: shimmer 3.5s infinite linear;
+      color: #0C140F !important;
+      text-decoration: none;
+      font-family: var(--display);
+      font-weight: 800;
+      font-size: 1.08rem;
+      padding: 16px 38px;
+      border-radius: var(--radius-pill);
+      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.35);
+      transition-property: translate, scale, box-shadow;
+      transition-duration: var(--motion-fast);
+      transition-timing-function: var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .btn-cta-giant:hover {
+        translate: 0 -3px;
+        scale: 1.02;
+        box-shadow: 0 16px 40px rgba(34, 197, 94, 0.45);
+      }
+    }
+
+    /* ==================== FOOTER ==================== */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 44px 0;
+      font-size: 0.92rem;
+      color: var(--ink-muted);
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 22px;
+    }
+
+    .footer-link {
+      text-decoration: none;
+      color: var(--ink-secondary);
+      font-weight: 500;
+      transition: color var(--motion-fast) var(--motion-ease);
+    }
+
+    @media (hover: hover) {
+      .footer-link:hover {
+        color: var(--accent);
+      }
+    }
+
+    /* Scroll Reveal Animations */
+    /*
+     * Entrada por scroll, con los mismos valores que la entrada escalonada de
+     * la aplicacion: opacidad, 4px de desenfoque y 12px de desplazamiento en
+     * 300ms. El retardo entre elementos de una secuencia es --motion-stagger.
+     */
+    [data-scroll-reveal] {
+      opacity: 0;
+      translate: 0 var(--motion-shift);
+      filter: blur(var(--motion-blur));
+      transition-property: opacity, translate, filter;
+      transition-duration: var(--motion-enter);
+      transition-timing-function: var(--motion-ease);
+      transition-delay: var(--reveal-delay, 0ms);
+    }
+
+    [data-scroll-reveal].is-inview {
+      opacity: 1;
+      translate: 0 0;
+      filter: blur(0);
+    }
+
+    /*
+     * Red de seguridad: si el IntersectionObserver no llega a ejecutarse (JS
+     * desactivado o error de carga), el contenido debe quedar visible igual.
+     * Sin esto, opacity:0 lo esconderia de forma permanente.
+     */
+    @media (scripting: none) {
+      [data-scroll-reveal] {
+        opacity: 1;
+        translate: 0 0;
+        filter: blur(0);
+      }
+    }
+
+    @media (max-width: 1140px) {
+      .nav-links {
+        display: none !important;
+      }
+    }
+
+    /* Responsividad */
+    @media (max-width: 960px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 40px;
+      }
+      .steps-grid {
+        grid-template-columns: 1fr;
+      }
+      .bento-grid {
+        grid-template-columns: 1fr;
+      }
+      .bento-col-2 {
+        grid-column: span 1;
+      }
+      .calculator-container {
+        grid-template-columns: 1fr;
+        gap: 36px;
+        padding: 30px;
+      }
+      .calc-results-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .nav-links {
+        display: none;
+      }
+      .hero-stats {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 540px) {
+      .calc-results-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .magic-dock-container {
+        bottom: 12px;
+        padding: 8px 12px;
+        gap: 8px;
+      }
+      .dock-icon-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1.1rem;
+      }
+    }
+    /* ======================================================================
+       PULSADO Y PREFERENCIA DE MOVIMIENTO
+       Mismo contrato que la aplicacion: 0.96 en 150ms, nunca si el control
+       esta deshabilitado, y cero movimiento si el usuario lo pide.
+       ====================================================================== */
+
+    .nav-mode-btn,
+    .theme-toggle-btn,
+    .interactive-hover-btn,
+    .btn-shimmer-pill,
+    .btn-cta-giant,
+    .dock-icon-btn {
+      /* El control dibuja su propio estado: sin destello gris del navegador. */
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .nav-mode-btn:not(:disabled):active,
+    .theme-toggle-btn:not(:disabled):active,
+    .interactive-hover-btn:not(:disabled):active,
+    .btn-shimmer-pill:not(:disabled):active,
+    .btn-cta-giant:not(:disabled):active,
+    .dock-icon-btn:not(:disabled):active {
+      scale: var(--motion-press);
+      transition-duration: var(--motion-fast);
+      transition-timing-function: var(--motion-ease);
+    }
+
+    /* El desplazamiento suave tambien es movimiento: solo si se permite. */
+    @media (prefers-reduced-motion: no-preference) {
+      html {
+        scroll-behavior: smooth;
+      }
+    }
+
+    /*
+     * Bajo reduced-motion no se mueve, no se escala y no se desenfoca nada.
+     * Lo que entraba con desplazamiento pasa a entrar solo con opacidad: el
+     * elemento nunca desaparece, unicamente deja de desplazarse.
+     */
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      [data-scroll-reveal] {
+        translate: 0 0;
+        filter: blur(0);
+        transition-property: opacity;
+      }
+
+      .nav-mode-btn:not(:disabled):active,
+      .theme-toggle-btn:not(:disabled):active,
+      .interactive-hover-btn:not(:disabled):active,
+      .btn-shimmer-pill:not(:disabled):active,
+      .btn-cta-giant:not(:disabled):active,
+      .dock-icon-btn:not(:disabled):active {
+        scale: 1;
+      }
+
+      /* Decoracion en bucle: aporta cero informacion, se detiene. */
+      .marquee-track,
+      .btn-cta-giant,
+      .border-beam,
+      .pulse-dot,
+      .kinetic-word {
+        animation-name: kinetic-fade;
+      }
+
+      /* Los desplazamientos de hover se quedan en el cambio de color. */
+      body[data-nav-mode="dock"] .brand:hover,
+      .btn-cta-giant:hover,
+      .calc-result-card:hover,
+      .dock-icon-btn:hover,
+      .glare-card:hover {
+        translate: 0 0;
+        scale: 1;
+      }
+    }
+  </style>
 </head>
-<body>
-<header class="topbar">
-    <div class="topbar__inner">
-        <a class="brand" href="#">
-            <span class="brand__mark" aria-hidden="true">&#127859;</span>
-            <span class="brand__text">SmartChef<span class="brand__ai">AI</span></span>
+<body data-nav-mode="topbar">
+  <div class="scroll-progress" id="scroll-progress"></div>
+
+  <!-- ==================== NAVBAR ==================== -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="#inicio">
+        <span class="brand-icon">🍳</span>
+        <span>SmartChef&nbsp;<span class="brand-ai-badge">AI&nbsp;3.8</span></span>
+      </a>
+
+      <nav class="nav-links">
+        <a class="nav-link" href="#como-funciona">¿Cómo funciona?</a>
+        <a class="nav-link" href="#beneficios">Beneficios</a>
+        <a class="nav-link" href="#calculadora">Calculadora de Ahorro</a>
+        <a class="nav-link" href="swagger-ui/index.html" target="_blank" rel="noopener">Swagger API</a>
+      </nav>
+
+      <div class="nav-actions">
+        <!-- BOTÓN CONMUTADOR DE NAVEGACIÓN (BARRA -> DOCK) -->
+        <button class="nav-mode-btn" id="btn-switch-to-dock" title="Cambiar a Dock flotante">
+          <span>📱</span>
+          <span>Modo Dock</span>
+        </button>
+
+        <!-- ANIMATED THEME TOGGLER (MAGIC UI) -->
+        <button class="theme-toggle-btn" id="theme-btn" aria-label="Cambiar tema">
+          <span class="theme-toggle-icon" id="theme-icon">🌙</span>
+        </button>
+
+        <!-- INTERACTIVE HOVER BUTTON ESTABLE (MAGIC UI) -->
+        <a class="interactive-hover-btn" href="app.html">
+          <span class="btn-bg-fill"></span>
+          <span class="btn-dot"></span>
+          <span class="btn-text">¡Entrar a la App!</span>
+          <span class="btn-arrow">→</span>
         </a>
-
-        <nav class="topbar__nav">
-            <button class="navlink is-active" data-view="scan" type="button">Escanear</button>
-            <button class="navlink" data-view="favorites" type="button">Favoritos</button>
-            <button class="navlink" data-view="history" type="button">Historial</button>
-            <button class="navlink" id="btn-docs" type="button">API Docs</button>
-        </nav>
-
-        <div class="topbar__auth">
-            <span class="userchip is-hidden" id="userchip"></span>
-            <button class="btn btn--ghost" id="btn-auth" type="button">Iniciar sesion</button>
-        </div>
+      </div>
     </div>
-</header>
+  </header>
 
-<main class="page">
+  <!-- ==================== 1. HERO SECTION (KINETIC TEXT & TEXT ANIMATE) ==================== -->
+  <section class="hero-section" id="inicio">
+    <div class="container">
+      <div class="hero-grid">
+        <!-- Columna de Texto -->
+        <div class="hero-content-col">
+          <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            <span>Desarrollado con Google Gemini 3.8 Flash Vision</span>
+          </div>
 
-    <!-- ============ VISTA: ESCANEAR ============ -->
-    <section class="view is-active" id="view-scan">
-        <div class="hero">
-            <div class="hero__inner">
+          <!-- KINETIC TEXT ANIMATE -->
+          <h1 class="hero-title">
+            <span class="kinetic-word" style="--d: 80ms;">Tu</span>
+            <span class="kinetic-word" style="--d: 140ms;">refrigeradora</span>
+            <span class="kinetic-word" style="--d: 200ms;">llena</span>
+            <span class="kinetic-word" style="--d: 260ms;">de</span>
+            <span class="kinetic-word" style="--d: 320ms;">ideas,</span>
+            <br />
+            <span class="hero-title-highlight kinetic-word" style="--d: 400ms;">cero</span>
+            <span class="hero-title-highlight kinetic-word" style="--d: 460ms;">comida</span>
+            <span class="hero-title-highlight kinetic-word" style="--d: 520ms;">a</span>
+            <span class="hero-title-highlight kinetic-word" style="--d: 580ms;">la</span>
+            <span class="hero-title-highlight kinetic-word" style="--d: 640ms;">basura.</span>
+          </h1>
 
-                <div class="hero__copy">
-                    <p class="hero__eyebrow">
-                        <span class="hero__dot" aria-hidden="true"></span>
-                        Cocina de aprovechamiento con IA
-                    </p>
+          <p class="hero-desc">
+            Sube una fotografía de lo que tienes en tu refri o despensa. El modelo multimodal <strong>Gemini 3.8</strong> reconoce cada vegetal, lácteo y proteína, proponiendo recetas gourmet equilibradas en tiempo récord.
+          </p>
 
-                    <h1 class="hero__title">
-                        &iquest;No sabes que cocinar con lo que tienes en tu
-                        <span class="hero__mark">refri</span>?
-                    </h1>
+          <div class="hero-actions">
+            <!-- Shimmer CTA -->
+            <a class="btn-shimmer-pill" href="app.html">
+              <span>🚀 Probar SmartChef Gratis</span>
+            </a>
+            <!-- Interactive Hover Button Secondary ESTABLE -->
+            <a class="interactive-hover-btn" href="#como-funciona">
+              <span class="btn-bg-fill"></span>
+              <span class="btn-dot"></span>
+              <span class="btn-text">Ver demostración</span>
+              <span class="btn-arrow">↓</span>
+            </a>
+          </div>
 
-                    <p class="hero__subtitle">
-                        La IA crea <strong>3 recetas gourmet de aprovechamiento</strong> en
-                        segundos. Solo necesitas una foto de tu refrigeradora o tu despensa.
-                    </p>
+          <!-- NUMBER TICKER HERO STATS -->
+          <div class="hero-stats">
+            <div>
+              <div class="hero-stat-value number-ticker" data-target="3" data-suffix=" Recetas">3 Recetas</div>
+              <div class="hero-stat-label">Opciones gourmet por escaneo</div>
+            </div>
+            <div>
+              <div class="hero-stat-value number-ticker" data-target="1.8" data-prefix="~" data-suffix=" s">~1.8 s</div>
+              <div class="hero-stat-label">Inferencia con Gemini 3.8</div>
+            </div>
+            <div>
+              <div class="hero-stat-value number-ticker" data-target="92" data-suffix=" Tests">92 Tests</div>
+              <div class="hero-stat-label">Backend Spring Boot 3 validado</div>
+            </div>
+          </div>
+        </div>
 
-                    <div class="hero__actions">
-                        <button class="btn btn--primary btn--lg" id="btn-hero-upload" type="button">
-                            <span aria-hidden="true">&#128247;</span> Subir mi foto
-                        </button>
-                        <button class="btn btn--soft btn--lg" id="btn-hero-demo" type="button">
-                            <span aria-hidden="true">&#9889;</span> Probar con foto demo
-                        </button>
-                        <button class="btn btn--soft btn--lg" id="btn-hero-qr" type="button" hidden>
-                            <span aria-hidden="true">&#128241;</span> Abrir en celular
-                        </button>
-                    </div>
+        <!-- Columna de Mockup Card Visual con BORDER BEAM & GLARE HOVER -->
+        <div class="hero-visual-col">
+          <div class="hero-visual-card glare-card border-beam-card">
+            <div class="border-beam"></div>
 
-                    <ul class="hero__facts">
-                        <li><strong>3</strong> recetas por foto</li>
-                        <li><strong>~2 s</strong> de analisis</li>
-                        <li><strong>0 &euro;</strong> sin registro</li>
-                    </ul>
+            <div class="mockup-header">
+              <span class="mockup-status-dot">
+                <span class="hero-badge-dot"></span>
+                Inferencia Gemini 3.8 Vision Activa
+              </span>
+              <span style="font-family: var(--mono); font-size: 0.78rem; color: var(--ink-muted);">API v3.8 Live</span>
+            </div>
+
+            <!-- Escaneo visual simulado -->
+            <div class="mockup-fridge-preview">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="font-size: 0.88rem; color: var(--ink);">📸 Ingredientes detectados en foto:</strong>
+                <span style="font-size: 0.75rem; color: var(--accent); font-weight: 700;">4 detectados</span>
+              </div>
+              <div class="fridge-tag-row">
+                <span class="fridge-tag">🍅 Tomate maduro <small style="color:var(--accent); font-family:var(--mono);">99%</small></span>
+                <span class="fridge-tag">🥚 Huevos de corral <small style="color:var(--accent); font-family:var(--mono);">97%</small></span>
+                <span class="fridge-tag">🧅 Cebolla roja <small style="color:var(--accent); font-family:var(--mono);">94%</small></span>
+                <span class="fridge-tag">🧀 Queso fresco <small style="color:var(--accent); font-family:var(--mono);">92%</small></span>
+              </div>
+            </div>
+
+            <!-- Receta Generada -->
+            <div class="recipe-card-preview">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <span style="font-size: 0.76rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em;">Receta Recomendada</span>
+                  <h4 style="font-family: var(--display); font-size: 1.15rem; color: var(--ink); margin-top: 2px;">Shakshuka Express al Sartén</h4>
                 </div>
-
-                <!-- Muestra el resultado antes de pedir nada: foto -> ingredientes -> receta. -->
-                <div class="hero__visual" aria-hidden="true">
-                    <figure class="shot">
-                        <img class="shot__img" src="assets/demo-fridge.jpg" alt="" loading="lazy"
-                             width="1200" height="900">
-                        <figcaption class="shot__caption">tu refrigeradora</figcaption>
-                    </figure>
-
-                    <ul class="floaties floaties--top">
-                        <li class="floaty">&#10004; tomate</li>
-                        <li class="floaty">&#10004; huevo</li>
-                        <li class="floaty">&#10004; calabacin</li>
-                    </ul>
-
-                    <div class="minicard">
-                        <p class="minicard__title">Pisto casero con huevo</p>
-                        <p class="minicard__meta">
-                            <span>&#9201; 45 min</span>
-                            <span>&#9881; Media</span>
-                            <span>&#128293; 420 kcal</span>
-                        </p>
-                        <p class="minicard__tip">
-                            <strong>&#128161; Tip</strong> Media cucharadita de azucar corta la acidez.
-                        </p>
-                    </div>
-                </div>
-
+                <span style="background: var(--card); border: 1px solid var(--border); padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700;">Aprovechamiento 100%</span>
+              </div>
+              <p style="font-size: 0.86rem; color: var(--ink-secondary); margin-top: 8px;">
+                Sofríe la cebolla con los tomates hasta reducir. Abre 2 pozos para los huevos y espolvorea queso fresco.
+              </p>
+              <div class="recipe-meta-row">
+                <span>⏱️ 15 min</span>
+                <span>🔥 340 kcal</span>
+                <span>🟢 Muy Fácil</span>
+              </div>
             </div>
+          </div>
         </div>
-
-        <div class="dropzone" id="dropzone" tabindex="0" role="button"
-             aria-label="Arrastra una foto o pulsa para seleccionar un archivo">
-            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
-
-            <div class="dropzone__empty" id="dropzone-empty">
-                <svg class="dropzone__icon" viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M12 16V4m0 0L8 8m4-4 4 4" stroke="currentColor" stroke-width="1.6"
-                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                    <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor"
-                          stroke-width="1.6" stroke-linecap="round" fill="none"/>
-                </svg>
-                <p class="dropzone__title">Arrastra tu foto aqui</p>
-                <p class="dropzone__hint">o pulsa para elegir un archivo &middot; JPEG, PNG o WEBP &middot; max. 15MB</p>
-            </div>
-
-            <div class="preview is-hidden" id="preview">
-                <img class="preview__img" id="preview-img" alt="Vista previa de la foto cargada">
-                <div class="preview__meta">
-                    <span class="preview__name" id="preview-name"></span>
-                    <span class="preview__size" id="preview-size"></span>
-                </div>
-            </div>
-        </div>
-
-        <div class="actions">
-            <button class="btn btn--primary btn--lg" id="btn-analyze" type="button" disabled>
-                Analizar ingredientes
-            </button>
-            <button class="btn btn--ghost" id="btn-reset" type="button" hidden>Cambiar foto</button>
-        </div>
-
-        <!-- Indicador de procesamiento -->
-        <div class="loader is-hidden" id="loader" role="status" aria-live="polite">
-            <div class="loader__spinner" aria-hidden="true"></div>
-            <p class="loader__text">Analizando ingredientes con Gemini AI...</p>
-            <p class="loader__sub" id="loader-sub">Detectando alimentos y creando tus recetas</p>
-        </div>
-
-        <div class="alert is-hidden" id="alert" role="alert"></div>
-
-        <!-- Resultados -->
-        <section class="results is-hidden" id="results">
-            <div class="panel">
-                <h2 class="panel__title">Ingredientes detectados</h2>
-                <ul class="pills" id="detected-list"></ul>
-            </div>
-
-            <h2 class="section-title">Tus 3 recetas sugeridas</h2>
-            <div class="cards" id="recipe-cards"></div>
-        </section>
-    </section>
-
-    <!-- ============ VISTA: FAVORITOS ============ -->
-    <section class="view" id="view-favorites">
-        <h1 class="view__title">Mis recetas favoritas</h1>
-        <p class="view__subtitle">Las recetas que guardaste para cocinar mas tarde.</p>
-        <div class="cards" id="favorite-cards"></div>
-        <div class="empty is-hidden" id="favorites-empty">
-            <p>Todavia no has guardado ninguna receta.</p>
-        </div>
-    </section>
-
-    <!-- ============ VISTA: HISTORIAL ============ -->
-    <section class="view" id="view-history">
-        <h1 class="view__title">Historial de escaneos</h1>
-        <p class="view__subtitle">Cada foto que analizaste con su resultado completo.</p>
-        <div id="history-list"></div>
-        <div class="empty is-hidden" id="history-empty">
-            <p>Aun no tienes escaneos guardados en tu cuenta.</p>
-        </div>
-    </section>
-</main>
-
-<footer class="footer">
-    <p>
-        SmartChef AI &middot; Spring Boot 3.3.4 &middot; Java 21 &middot; Google Gemini 1.5 Flash
-        &middot; <a href="/swagger-ui.html" target="_blank" rel="noopener">Documentacion OpenAPI</a>
-    </p>
-</footer>
-
-<!-- ============ MODAL: AUTENTICACION ============ -->
-<div class="modal is-hidden" id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-title">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__box">
-        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
-
-        <h2 class="modal__title" id="auth-title">Accede a tu cuenta</h2>
-
-        <div class="tabs">
-            <button class="tab is-active" data-tab="login" type="button">Iniciar sesion</button>
-            <button class="tab" data-tab="register" type="button">Crear cuenta</button>
-        </div>
-
-        <form class="form is-active" id="form-login" novalidate>
-            <label class="field">
-                <span class="field__label">Usuario o email</span>
-                <input class="field__input" name="username" type="text" autocomplete="username" required>
-            </label>
-            <label class="field">
-                <span class="field__label">Contrasena</span>
-                <input class="field__input" name="password" type="password" autocomplete="current-password" required>
-            </label>
-            <p class="form__error is-hidden" data-form-error></p>
-            <button class="btn btn--primary btn--block" type="submit">Entrar</button>
-        </form>
-
-        <form class="form" id="form-register" novalidate>
-            <label class="field">
-                <span class="field__label">Usuario</span>
-                <input class="field__input" name="username" type="text" minlength="3" maxlength="50" required>
-            </label>
-            <label class="field">
-                <span class="field__label">Email</span>
-                <input class="field__input" name="email" type="email" required>
-            </label>
-            <label class="field">
-                <span class="field__label">Nombre completo</span>
-                <input class="field__input" name="fullName" type="text" autocomplete="name">
-            </label>
-            <label class="field">
-                <span class="field__label">Contrasena</span>
-                <input class="field__input" name="password" type="password" minlength="8"
-                       autocomplete="new-password" required>
-                <span class="field__hint">Minimo 8 caracteres</span>
-            </label>
-            <p class="form__error is-hidden" data-form-error></p>
-            <button class="btn btn--primary btn--block" type="submit">Crear cuenta</button>
-        </form>
+      </div>
     </div>
-</div>
+  </section>
 
-<!-- ============ MODAL: SWAGGER UI ============ -->
-<div class="modal is-hidden" id="docs-modal" role="dialog" aria-modal="true" aria-labelledby="docs-title">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__box modal__box--wide">
-        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
-        <h2 class="modal__title" id="docs-title">Documentacion interactiva de la API</h2>
-        <p class="modal__lead">
-            Prueba cada endpoint directamente desde Swagger UI. Tambien puedes abrirla en una
-            <a href="/swagger-ui.html" target="_blank" rel="noopener">pestana nueva</a>.
-        </p>
-        <iframe class="docs-frame" id="docs-frame" title="Swagger UI" src="about:blank"></iframe>
+  <!-- ==================== MAGIC UI: MARQUEE DE INGREDIENTES ==================== -->
+  <div class="marquee-container">
+    <div class="marquee-track">
+      <span class="marquee-chip">🥑 Palta Hass</span>
+      <span class="marquee-chip">🍅 Tomates Maduros</span>
+      <span class="marquee-chip">🥚 Huevos de Corral</span>
+      <span class="marquee-chip">🧅 Cebolla Roja</span>
+      <span class="marquee-chip">🧄 Dientes de Ajo</span>
+      <span class="marquee-chip">🧀 Queso Parmesano</span>
+      <span class="marquee-chip">🍄 Champiñones Frescos</span>
+      <span class="marquee-chip">🍋 Limón Sutil</span>
+      <span class="marquee-chip">🥦 Brócoli</span>
+      <span class="marquee-chip">🍗 Pechuga de Pollo</span>
+      <span class="marquee-chip">🌿 Albahaca Fresca</span>
+      <span class="marquee-chip">🥔 Papa Amarilla</span>
+      <!-- Loop sin interrupción -->
+      <span class="marquee-chip">🥑 Palta Hass</span>
+      <span class="marquee-chip">🍅 Tomates Maduros</span>
+      <span class="marquee-chip">🥚 Huevos de Corral</span>
+      <span class="marquee-chip">🧅 Cebolla Roja</span>
+      <span class="marquee-chip">🧄 Dientes de Ajo</span>
+      <span class="marquee-chip">🧀 Queso Parmesano</span>
+      <span class="marquee-chip">🍄 Champiñones Frescos</span>
+      <span class="marquee-chip">🍋 Limón Sutil</span>
+      <span class="marquee-chip">🥦 Brócoli</span>
+      <span class="marquee-chip">🍗 Pechuga de Pollo</span>
+      <span class="marquee-chip">🌿 Albahaca Fresca</span>
+      <span class="marquee-chip">🥔 Papa Amarilla</span>
     </div>
-</div>
+  </div>
 
-<!-- ============ MODAL: CODIGO QR ============ -->
-<div class="modal is-hidden" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-title">
-    <div class="modal__backdrop" data-close-modal></div>
-    <div class="modal__box modal__box--narrow">
-        <button class="modal__close" type="button" data-close-modal aria-label="Cerrar">&times;</button>
+  <!-- ==================== 2. ¿CÓMO FUNCIONA? ==================== -->
+  <section class="section section-alt" id="como-funciona">
+    <div class="container">
+      <div class="section-header" data-scroll-reveal>
+        <span class="section-eyebrow">Flujo sin fricción</span>
+        <h2 class="section-title">De tu refrigerador a la mesa en 3 simples pasos</h2>
+        <p class="section-subtitle">Diseñado con Spring Boot 3 y arquitectura reactiva para responderte sin esperas ni registros tediosos.</p>
+      </div>
 
-        <h2 class="modal__title" id="qr-title">Abrir en tu celular</h2>
-        <p class="modal__lead">
-            Escanea el codigo con la camara de tu telefono para abrir SmartChef AI
-            y fotografiar tu refrigeradora directamente.
-        </p>
+      <div class="steps-grid">
+        <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 1);">
+          <div class="step-number">01</div>
+          <h3>Toma o sube una foto</h3>
+          <p>Abre la cámara de tu celular o sube una foto de tu refri o alacena. No necesitas tipear los ingredientes a mano uno por uno.</p>
+        </div>
 
-        <div class="qr" id="qr-canvas" aria-live="polite"></div>
+        <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 2);">
+          <div class="step-number">02</div>
+          <h3>Inferencia Gemini 3.8</h3>
+          <p>Google Gemini 3.8 Vision analiza la imagen de forma multimodal, reconociendo vegetales, lácteos y carnes con máxima fidelidad.</p>
+        </div>
 
-        <p class="qr__url" id="qr-url"></p>
-        <p class="qr__note is-hidden" id="qr-note"></p>
+        <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 3);">
+          <div class="step-number">03</div>
+          <h3>Cocina sin desperdiciar</h3>
+          <p>Recibe 3 opciones culinarias con instrucciones paso a paso, tiempos exactos y tips para que ningún alimento termine en la basura.</p>
+        </div>
+      </div>
     </div>
-</div>
+  </section>
 
-<div class="toast is-hidden" id="toast" role="status" aria-live="polite"></div>
+  <!-- ==================== 3. MAGIC UI: BENTO GRID DE BENEFICIOS ==================== -->
+  <section class="section" id="beneficios">
+    <div class="container">
+      <div class="section-header" data-scroll-reveal>
+        <span class="section-eyebrow">Por qué SmartChef AI</span>
+        <h2 class="section-title">Beneficios pensados para tu bolsillo y tu tiempo</h2>
+        <p class="section-subtitle">No es solo otra app de cocina; es un asistente de ahorro que transforma sobrantes en platos de restaurante.</p>
+      </div>
 
-<script src="assets/qr.js"></script>
-<script src="app.js"></script>
+      <div class="bento-grid">
+        <!-- Bento Card 1 (Span 2) -->
+        <div class="bento-card bento-col-2 glare-card border-beam-card" data-scroll-reveal>
+          <div class="border-beam"></div>
+          <div class="bento-header">
+            <span class="bento-tag">💰 Ahorro Inmediato</span>
+            <h3>Aprovechamiento real: rescata comida antes de que se venza</h3>
+            <p>
+              El peruano promedio bota hasta un 30% de sus compras porque los ingredientes quedan escondidos en las gavetas. SmartChef prioriza de inmediato lo más perecible para evitar que termine en el tacho de basura.
+            </p>
+          </div>
+          <div class="bento-visual">
+            <div class="bento-checklist-item">
+              <span>🥬 Espinacas y tomates por vencer</span>
+              <span class="bento-tag-pill tag-danger">Vencen en 48 hrs</span>
+            </div>
+            <div class="bento-checklist-item">
+              <span>✨ SmartChef sugiere: Quiche express al sartén</span>
+              <span class="bento-tag-pill tag-success">100% Rescatado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Card 2 (Span 1) -->
+        <div class="bento-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 1);">
+          <div class="bento-header">
+            <span class="bento-tag">⚡ En ~1.8 Segundos</span>
+            <h3>Cero estrés: "¿Qué cocino hoy?"</h3>
+            <p>
+              Ahorra los 40 minutos diarios que pasas abriendo la refri sin saber qué preparar.
+            </p>
+          </div>
+          <div class="bento-visual">
+            <div class="bento-pills-row">
+              <span class="bento-pill-feature">⏱️ &lt; 15 min</span>
+              <span class="bento-pill-feature">🌱 Ligero</span>
+              <span class="bento-pill-feature">🍲 Casero</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Card 3 (Span 1) -->
+        <div class="bento-card glare-card" data-scroll-reveal>
+          <div class="bento-header">
+            <span class="bento-tag">🥗 Nutrición Inteligente</span>
+            <h3>Se adapta a lo que puedes comer</h3>
+            <p>
+              ¿Prefieres platos vegetarianos, bajos en carbohidratos o altos en proteína? Las recetas se adaptan sin ingredientes imposibles.
+            </p>
+          </div>
+          <div class="bento-visual">
+            <div style="font-size: 0.85rem; color: var(--ink-secondary);">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <span>Equilibrio Nutricional</span>
+                <strong style="color:var(--accent);">Óptimo</strong>
+              </div>
+              <div style="height:6px; background:var(--border-strong); border-radius:99px; overflow:hidden;">
+                <div style="width:85%; height:100%; background:var(--accent); border-radius:99px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bento Card 4 (Span 2) -->
+        <div class="bento-card bento-col-2 glare-card border-beam-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 1);">
+          <div class="border-beam"></div>
+          <div class="bento-header">
+            <span class="bento-tag">🛡️ Enterprise Grade</span>
+            <h3>Backend Spring Boot 3 & Google Gemini 3.8 Flash</h3>
+            <p>
+              Desarrollado bajo estándares rigurosos de ingeniería de software: Java 21 LTS, validación estricta de esquemas JSON, documentación Swagger OpenAPI interactiva y tolerancia a fallos.
+            </p>
+          </div>
+          <div class="bento-visual">
+            <div class="bento-pills-row">
+              <span class="bento-pill-feature">☕ Java 21 LTS</span>
+              <span class="bento-pill-feature">🍃 Spring Boot 3.3.4</span>
+              <span class="bento-pill-feature">🧠 Google Gemini 3.8</span>
+              <span class="bento-pill-feature">📑 Swagger OpenAPI</span>
+              <span class="bento-pill-feature">🚀 Render Cloud PaaS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 4. CALCULADORA DE IMPACTO Y AHORRO REALISTA ==================== -->
+  <section class="section section-alt" id="calculadora">
+    <div class="container">
+      <div class="section-header" data-scroll-reveal>
+        <span class="section-eyebrow">Calculadora Realista de Ahorro</span>
+        <h2 class="section-title">¿Cuánto dinero y comida salvas al año?</h2>
+        <p class="section-subtitle">Ajusta los sliders según la cantidad de personas en tu hogar y las comidas preparadas en casa cada semana.</p>
+      </div>
+
+      <div class="calculator-container border-beam-card" data-scroll-reveal>
+        <div class="border-beam"></div>
+
+        <div class="calc-controls">
+          <!-- Slider 1: Personas en casa -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="people-slider" class="slider-label">Personas en tu hogar:</label>
+              <span class="slider-value-badge" id="people-val">3 personas</span>
+            </div>
+            <input type="range" id="people-slider" class="calc-slider" min="1" max="8" value="3" />
+            <span class="slider-hint">Desde hogares unipersonales hasta familias numerosas (1 a 8 integrantes).</span>
+          </div>
+
+          <!-- Slider 2: Comidas cocinadas por semana -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label for="meals-slider" class="slider-label">Comidas preparadas en casa a la semana:</label>
+              <span class="slider-value-badge" id="meals-val">10 comidas / semana</span>
+            </div>
+            <input type="range" id="meals-slider" class="calc-slider" min="3" max="21" value="10" />
+            <span class="slider-hint" id="meals-desc">Aprox. almuerzos y cenas la mayor parte de la semana (10 de 21 comidas posibles).</span>
+          </div>
+
+          <p style="font-size: 0.82rem; color: var(--ink-muted); line-height: 1.5; border-left: 2px solid var(--accent); padding-left: 10px;">
+            * Estimación basada en costos de canasta familiar básica en Perú y reducción del 75% en desperdicio de vegetales, lácteos y carnes.
+          </p>
+        </div>
+
+        <!-- 4 Métricas Clave con NUMBER TICKER (CERO CO2) -->
+        <div class="calc-results-grid">
+          <div class="calc-result-card glare-card">
+            <div class="number-ticker" id="money-saved">S/ 1,350</div>
+            <div class="calc-result-label">Dinero ahorrado al año evitando tirar comida</div>
+          </div>
+
+          <div class="calc-result-card glare-card">
+            <div class="number-ticker" id="food-saved">78 kg</div>
+            <div class="calc-result-label">Alimentos frescos rescatados del tacho</div>
+          </div>
+
+          <div class="calc-result-card glare-card">
+            <div class="number-ticker" id="hours-saved">16 hrs</div>
+            <div class="calc-result-label">Horas al mes ahorradas pensando qué cocinar</div>
+          </div>
+
+          <div class="calc-result-card glare-card">
+            <div class="number-ticker" id="recipes-count">+140</div>
+            <div class="calc-result-label">Platos nuevos y creativos aprendidos al año</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== 5. BANNER FINAL CTA ==================== -->
+  <section class="cta-banner-section">
+    <div class="container">
+      <div class="cta-banner-card border-beam-card" data-scroll-reveal>
+        <div class="border-beam"></div>
+        <h2 class="cta-banner-title">Empieza a cocinar como un chef con lo que tienes hoy</h2>
+        <p class="cta-banner-desc">Sin registros obligatorios, sin tarjetas de crédito y con disponibilidad 24/7 en la nube con Gemini 3.8.</p>
+        <a class="btn-cta-giant" href="app.html">
+          <span>🚀 Abrir SmartChef AI Ahora</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong style="color: var(--ink); font-family: var(--display); font-size: 1.05rem;">SmartChef AI 3.8</strong>
+        <span> · Desarrollado por Odar Alcocer (UPC)</span>
+      </div>
+
+      <div class="footer-links">
+        <a class="footer-link" href="app.html">Web App</a>
+        <a class="footer-link" href="swagger-ui/index.html" target="_blank" rel="noopener">Swagger Docs</a>
+        <a class="footer-link" href="https://github.com/lappwv" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== 8. MAGIC UI DOCK (CON BOTÓN PARA VOLVER A LA BARRA SUPERIOR) ==================== -->
+  <div class="magic-dock-container" id="floating-dock">
+    <!-- Botón para alternar de vuelta a la Barra Superior -->
+    <button class="dock-icon-btn dock-mode-switch-btn" id="btn-switch-to-topbar" data-tooltip="Subir a Barra Superior">⬆️</button>
+    <div class="dock-divider"></div>
+    <a href="#inicio" class="dock-icon-btn" data-tooltip="Inicio">🍳</a>
+    <a href="#como-funciona" class="dock-icon-btn" data-tooltip="¿Cómo funciona?">⚡</a>
+    <a href="#beneficios" class="dock-icon-btn" data-tooltip="Beneficios">💎</a>
+    <a href="#calculadora" class="dock-icon-btn" data-tooltip="Calculadora">🧮</a>
+    <a href="swagger-ui/index.html" target="_blank" rel="noopener" class="dock-icon-btn" data-tooltip="Swagger API">📑</a>
+    <div class="dock-divider"></div>
+    <button class="dock-icon-btn" id="dock-theme-toggle" data-tooltip="Cambiar Tema">🌙</button>
+    <a href="app.html" class="dock-icon-btn dock-primary" data-tooltip="🚀 Entrar a la App">🚀</a>
+  </div>
+
+  <script>
+    // 1. Barra de Progreso de Lectura
+    const progressBar = document.getElementById('scroll-progress');
+    window.addEventListener('scroll', () => {
+      const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0;
+      progressBar.style.width = `${progress}%`;
+    });
+
+    // 2. Scroll Reveal Animations con Intersection Observer
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-inview');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('[data-scroll-reveal]').forEach(el => observer.observe(el));
+
+    // ==================== CONMUTADOR DE NAVEGACIÓN (BARRA vs DOCK) ====================
+    const btnSwitchToDock = document.getElementById('btn-switch-to-dock');
+    const btnSwitchToTopbar = document.getElementById('btn-switch-to-topbar');
+
+    function setNavMode(mode) {
+      document.body.setAttribute('data-nav-mode', mode);
+      localStorage.setItem('smartchef-nav-mode', mode);
+    }
+
+    const savedNavMode = localStorage.getItem('smartchef-nav-mode') || 'topbar';
+    setNavMode(savedNavMode);
+
+    btnSwitchToDock.addEventListener('click', () => {
+      setNavMode('dock');
+    });
+
+    btnSwitchToTopbar.addEventListener('click', () => {
+      setNavMode('topbar');
+    });
+
+    // ==================== ANIMATED THEME TOGGLER (GPU NATIVE 60FPS) ====================
+    const themeBtn = document.getElementById('theme-btn');
+    const dockThemeBtn = document.getElementById('dock-theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    function applyTheme(targetTheme) {
+      document.documentElement.setAttribute('data-theme', targetTheme);
+      localStorage.setItem('smartchef-theme', targetTheme);
+      const icon = targetTheme === 'light' ? '🌙' : '☀️';
+      if (themeIcon) themeIcon.textContent = icon;
+      if (dockThemeBtn) dockThemeBtn.textContent = icon;
+    }
+
+    function toggleThemeAnimated(e) {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const targetTheme = currentTheme === 'light' ? 'dark' : 'light';
+
+      if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        applyTheme(targetTheme);
+        return;
+      }
+
+      const rect = e && e.currentTarget ? e.currentTarget.getBoundingClientRect() : null;
+      const x = e && e.clientX ? e.clientX : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
+      const y = e && e.clientY ? e.clientY : (rect ? rect.top + rect.height / 2 : window.innerHeight / 2);
+      const maxRadius = Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, window.innerHeight - y)
+      );
+
+      document.documentElement.style.setProperty('--reveal-x', `${x}px`);
+      document.documentElement.style.setProperty('--reveal-y', `${y}px`);
+      document.documentElement.style.setProperty('--reveal-radius', `${maxRadius}px`);
+
+      document.startViewTransition(() => {
+        applyTheme(targetTheme);
+      });
+    }
+
+    // Inicializar tema
+    const savedTheme = localStorage.getItem('smartchef-theme') || 'light';
+    applyTheme(savedTheme);
+
+    themeBtn.addEventListener('click', toggleThemeAnimated);
+    dockThemeBtn.addEventListener('click', toggleThemeAnimated);
+
+    // ==================== GLARE HOVER (3D TILT & GLOSS) ====================
+    document.querySelectorAll('.glare-card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -6;
+        const rotateY = ((x - centerX) / centerX) * 6;
+
+        card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-3px)`;
+        card.style.setProperty('--gx', `${((x / rect.width) * 100).toFixed(1)}%`);
+        card.style.setProperty('--gy', `${((y / rect.height) * 100).toFixed(1)}%`);
+      });
+
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0)';
+      });
+    });
+
+    // ==================== NUMBER TICKER ANIMATION (MAGIC UI) ====================
+    function animateNumber(element, start, end, duration, prefix = '', suffix = '') {
+      let startTimestamp = null;
+      const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(easeOut * (end - start) + start);
+        element.textContent = `${prefix}${current.toLocaleString('es-PE')}${suffix}`;
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        } else {
+          element.textContent = `${prefix}${end.toLocaleString('es-PE')}${suffix}`;
+        }
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    // ==================== CALCULADORA DE AHORRO ====================
+    const peopleInput = document.getElementById('people-slider');
+    const mealsInput = document.getElementById('meals-slider');
+    const peopleVal = document.getElementById('people-val');
+    const mealsVal = document.getElementById('meals-val');
+    const mealsDesc = document.getElementById('meals-desc');
+
+    const moneySaved = document.getElementById('money-saved');
+    const foodSaved = document.getElementById('food-saved');
+    const hoursSaved = document.getElementById('hours-saved');
+    const recipesCount = document.getElementById('recipes-count');
+
+    let currentMoney = 1350;
+    let currentFood = 78;
+    let currentHours = 16;
+    let currentRecipes = 140;
+
+    function updateCalculations() {
+      const p = parseInt(peopleInput.value, 10);
+      const m = parseInt(mealsInput.value, 10);
+
+      peopleVal.textContent = `${p} ${p === 1 ? 'persona' : 'personas'}`;
+      mealsVal.textContent = `${m} comidas / semana`;
+
+      if (m <= 5) {
+        mealsDesc.textContent = "Comidas de fin de semana o días libres en casa.";
+      } else if (m <= 9) {
+        mealsDesc.textContent = "Aprox. 1 comida al día en casa (ej. solo almuerzos o solo cenas).";
+      } else if (m <= 15) {
+        mealsDesc.textContent = "Almuerzo y cena habituales la mayor parte de la semana.";
+      } else {
+        mealsDesc.textContent = "Desayuno, almuerzo y cena preparados en casa casi todos los días (hasta 21).";
+      }
+
+      const targetMoney = Math.round(p * m * 45);
+      const targetFood = Math.round(p * m * 2.6);
+      const targetHours = Math.round(4 + (m * 1.2));
+      const targetRecipes = Math.round(m * 14);
+
+      animateNumber(moneySaved, currentMoney, targetMoney, 350, 'S/ ');
+      animateNumber(foodSaved, currentFood, targetFood, 350, '', ' kg');
+      animateNumber(hoursSaved, currentHours, targetHours, 350, '', ' hrs');
+      animateNumber(recipesCount, currentRecipes, targetRecipes, 350, '+');
+
+      currentMoney = targetMoney;
+      currentFood = targetFood;
+      currentHours = targetHours;
+      currentRecipes = targetRecipes;
+    }
+
+    peopleInput.addEventListener('input', updateCalculations);
+    mealsInput.addEventListener('input', updateCalculations);
+
+    // ==================== DOCK MAGNIFICATION (MAGIC UI DOCK) ====================
+    const dockContainer = document.getElementById('floating-dock');
+    const dockButtons = dockContainer.querySelectorAll('.dock-icon-btn');
+
+    dockButtons.forEach((btn, index) => {
+      btn.addEventListener('mouseenter', () => {
+        if (dockButtons[index - 1]) {
+          dockButtons[index - 1].style.transform = 'scale(1.15) translateY(-4px)';
+        }
+        if (dockButtons[index + 1]) {
+          dockButtons[index + 1].style.transform = 'scale(1.15) translateY(-4px)';
+        }
+      });
+
+      btn.addEventListener('mouseleave', () => {
+        if (dockButtons[index - 1]) {
+          dockButtons[index - 1].style.transform = '';
+        }
+        if (dockButtons[index + 1]) {
+          dockButtons[index + 1].style.transform = '';
+        }
+      });
+    });
+  </script>
 </body>
 </html>

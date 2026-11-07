@@ -53,7 +53,7 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // SPA y recursos estaticos
-                        .requestMatchers("/", "/index.html", "/styles.css", "/app.js",
+                        .requestMatchers("/", "/index.html", "/app.html", "/styles.css", "/app.js",
                                 "/favicon.ico", "/assets/**").permitAll()
                         // Documentacion
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**",

@@ -19,3 +19,6 @@ nbproject/
 ### SO ###
 .DS_Store
 Thumbs.db
+
+# Base de datos H2 local (perfil por defecto)
+/data/

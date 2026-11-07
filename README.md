@@ -190,7 +190,8 @@ Las pruebas se ejecutan **100% offline** (Gemini se simula con Mockito y la base
 ./mvnw spring-boot:run
 ```
 La aplicación estará disponible en:
-* **Aplicación Web (SPA):** `http://localhost:8080/`
+* **Landing de presentación:** `http://localhost:8080/`
+* **Aplicación Web (SPA):** `http://localhost:8080/app.html`
 * **Swagger UI:** `http://localhost:8080/swagger-ui.html`
 
 ---

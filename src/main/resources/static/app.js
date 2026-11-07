@@ -183,10 +183,12 @@
         if (isLoggedIn() && state.user) {
             chip.textContent = state.user.fullName || state.user.username;
             show(chip);
-            button.textContent = 'Salir';
+            var authTxt = $('btn-auth-text');
+            if (authTxt) { authTxt.textContent = 'Salir'; } else { button.textContent = 'Salir'; }
         } else {
             hide(chip);
-            button.textContent = 'Iniciar sesion';
+            var authTxt = $('btn-auth-text');
+            if (authTxt) { authTxt.textContent = 'Iniciar sesion'; } else { button.textContent = 'Iniciar sesion'; }
         }
     }
 
@@ -198,6 +200,9 @@
         });
         document.querySelectorAll('.navlink[data-view]').forEach(function (link) {
             link.classList.toggle('is-active', link.dataset.view === name);
+        });
+        document.querySelectorAll('[data-dock-view]').forEach(function (btn) {
+            btn.classList.toggle('is-active', btn.getAttribute('data-dock-view') === name);
         });
 
         if (name === 'favorites') {
@@ -405,7 +410,7 @@
         }).join('');
 
         var steps = (recipe.steps || []).map(function (step) {
-            return '<li>' + escapeHtml(step) + '</li>';
+            return '<li class="text-animate-item">' + escapeHtml(step) + '</li>';
         }).join('');
 
         var isFavorite = recipe.favorite === true;
@@ -421,7 +426,7 @@
               + '</div></div>'
             : '';
 
-        return '<article class="card">'
+        return '<article class="card text-animate-card">'
             + '<h3 class="card__title">' + escapeHtml(recipe.title) + '</h3>'
             + (recipe.description
                 ? '<p class="card__desc">' + escapeHtml(recipe.description) + '</p>' : '')
@@ -780,6 +785,94 @@
                 };
             },
             'Cuenta creada correctamente'));
+
+        // Modo de Navegacion (Barra vs Dock)
+        function setNavMode(mode) {
+            document.body.setAttribute('data-nav-mode', mode);
+            try { localStorage.setItem('smartchef-app-nav-mode', mode); } catch (e) {}
+        }
+        var savedNav = 'topbar';
+        try { savedNav = localStorage.getItem('smartchef-app-nav-mode') || 'topbar'; } catch (e) {}
+        setNavMode(savedNav);
+
+        var btnToDock = $('btn-switch-to-dock');
+        if (btnToDock) btnToDock.addEventListener('click', function () { setNavMode('dock'); });
+        var btnToTop = $('btn-switch-to-topbar');
+        if (btnToTop) btnToTop.addEventListener('click', function () { setNavMode('topbar'); });
+
+        // Eventos del Dock
+        document.querySelectorAll('[data-dock-view]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                switchView(btn.getAttribute('data-dock-view'));
+            });
+        });
+
+        var dockDocs = $('dock-btn-docs');
+        if (dockDocs) dockDocs.addEventListener('click', function () {
+            var btnDocs = $('btn-docs');
+            if (btnDocs) btnDocs.click();
+        });
+
+        var dockAuth = $('dock-btn-auth');
+        if (dockAuth) dockAuth.addEventListener('click', function () {
+            var btnAuth = $('btn-auth');
+            if (btnAuth) btnAuth.click();
+        });
+
+        // Theme Switcher con GPU Native 60fps View Transition
+        var themeBtn = $('theme-btn');
+        var dockThemeBtn = $('dock-theme-toggle');
+        var themeIcon = $('theme-icon');
+
+        function applyTheme(target) {
+            document.documentElement.setAttribute('data-theme', target);
+            try { localStorage.setItem('smartchef-theme', target); } catch (e) {}
+            var icon = target === 'dark' ? '☀️' : '🌙';
+            if (themeIcon) themeIcon.textContent = icon;
+            if (dockThemeBtn) dockThemeBtn.textContent = icon;
+        }
+
+        function toggleTheme(e) {
+            var cur = document.documentElement.getAttribute('data-theme') || 'light';
+            var next = cur === 'light' ? 'dark' : 'light';
+            if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                applyTheme(next);
+                return;
+            }
+            var rect = e && e.currentTarget ? e.currentTarget.getBoundingClientRect() : null;
+            var x = e && e.clientX ? e.clientX : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
+            var y = e && e.clientY ? e.clientY : (rect ? rect.top + rect.height / 2 : window.innerHeight / 2);
+            var radius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+            document.documentElement.style.setProperty('--reveal-x', x + 'px');
+            document.documentElement.style.setProperty('--reveal-y', y + 'px');
+            document.documentElement.style.setProperty('--reveal-radius', radius + 'px');
+            document.startViewTransition(function () {
+                applyTheme(next);
+            });
+        }
+
+        var savedTheme = 'light';
+        try { savedTheme = localStorage.getItem('smartchef-theme') || 'light'; } catch (e) {}
+        applyTheme(savedTheme);
+
+        if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+        if (dockThemeBtn) dockThemeBtn.addEventListener('click', toggleTheme);
+
+        // Dock magnification
+        var dockContainer = $('floating-dock');
+        if (dockContainer) {
+            var dockBtns = dockContainer.querySelectorAll('.dock-icon-btn');
+            dockBtns.forEach(function (btn, idx) {
+                btn.addEventListener('mouseenter', function () {
+                    if (dockBtns[idx - 1]) dockBtns[idx - 1].style.transform = 'scale(1.15) translateY(-4px)';
+                    if (dockBtns[idx + 1]) dockBtns[idx + 1].style.transform = 'scale(1.15) translateY(-4px)';
+                });
+                btn.addEventListener('mouseleave', function () {
+                    if (dockBtns[idx - 1]) dockBtns[idx - 1].style.transform = '';
+                    if (dockBtns[idx + 1]) dockBtns[idx + 1].style.transform = '';
+                });
+            });
+        }
     }
 
     // --- Arranque --------------------------------------------------------
@@ -788,16 +881,63 @@
      * El boton de QR solo tiene sentido en escritorio: si ya estas en el movil,
      * no necesitas escanear nada para abrir la web aqui.
      */
+    var handheldQuery = window.matchMedia('(max-width: 767px), (pointer: coarse)');
+
     function isHandheld() {
-        return window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
+        return handheldQuery.matches;
+    }
+
+    /**
+     * Mantiene el boton de QR acorde al dispositivo. Se reevalua al cambiar el
+     * tamano o la orientacion: decidirlo solo al cargar deja el boton oculto
+     * para siempre en una ventana que empieza estrecha y luego se agranda.
+     */
+    function syncQrButton() {
+        $('btn-hero-qr').hidden = isHandheld();
+    }
+
+    /**
+     * Inclinacion 3D y brillo que siguen al puntero, el mismo efecto que usa
+     * .glare-card en el landing. Solo con puntero fino y si el usuario no ha
+     * pedido menos movimiento: en tactil no hay puntero al que seguir.
+     */
+    function bindGlareCards() {
+        if (!window.matchMedia('(hover: hover)').matches
+            || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        document.querySelectorAll('.glare-card').forEach(function (card) {
+            card.addEventListener('mousemove', function (event) {
+                var rect = card.getBoundingClientRect();
+                var x = event.clientX - rect.left;
+                var y = event.clientY - rect.top;
+                var rotateX = ((y - rect.height / 2) / (rect.height / 2)) * -6;
+                var rotateY = ((x - rect.width / 2) / (rect.width / 2)) * 6;
+
+                card.style.transform = 'perspective(1000px) rotateX(' + rotateX.toFixed(2)
+                    + 'deg) rotateY(' + rotateY.toFixed(2) + 'deg)';
+                card.style.setProperty('--gx', ((x / rect.width) * 100).toFixed(1) + '%');
+                card.style.setProperty('--gy', ((y / rect.height) * 100).toFixed(1) + '%');
+            });
+
+            card.addEventListener('mouseleave', function () {
+                card.style.transform = '';
+            });
+        });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         bindEvents();
         renderSession();
+        bindGlareCards();
+        syncQrButton();
 
-        if (!isHandheld()) {
-            $('btn-hero-qr').hidden = false;
+        if (handheldQuery.addEventListener) {
+            handheldQuery.addEventListener('change', syncQrButton);
+        } else {
+            // Safari antiguo no implementa addEventListener en MediaQueryList.
+            handheldQuery.addListener(syncQrButton);
         }
     });
 })();

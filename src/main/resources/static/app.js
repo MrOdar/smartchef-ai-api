@@ -31,7 +31,10 @@
         file: null,
         token: localStorage.getItem(TOKEN_KEY) || null,
         user: safeParse(localStorage.getItem(USER_KEY)),
-        lastScan: null
+        lastScan: null,
+        showingDemo: false,
+        detected: [],
+        excluded: []
     };
 
     // --- Utilidades ------------------------------------------------------
@@ -327,7 +330,7 @@
             .then(function (data) {
                 state.lastScan = data;
                 state.demoLoaded = true;
-                renderScanResult(data);
+                renderScanResult(data, { demo: true });
                 toast('Resultado de ejemplo cargado al instante');
             })
             .catch(function (error) {
@@ -367,17 +370,156 @@
         }, 1400);
     }
 
-    function renderScanResult(data) {
+    /**
+     * Pinta ingredientes y recetas.
+     *
+     * @param data     respuesta del backend.
+     * @param options  demo: marca el resultado como ejemplo precalculado.
+     *                 scroll: lleva la vista a los resultados. Se desactiva
+     *                 en la carga automatica, porque mover la pagina sola
+     *                 nada mas abrirla desorienta.
+     */
+    function renderScanResult(data, options) {
+        var opts = options || {};
         var detected = data.detectedIngredients || [];
+
+        // Un resultado nuevo empieza con todos los ingredientes dentro.
+        state.detected = detected.slice();
+        state.excluded = [];
+
         $('detected-list').innerHTML = detected.length
             ? detected.map(function (name) {
-                return '<li class="pill">' + escapeHtml(name) + '</li>';
+                return '<li><button class="pill" type="button" aria-pressed="true"'
+                    + ' data-ingredient="' + escapeHtml(name) + '">'
+                    + '<span class="pill__mark" aria-hidden="true"></span>'
+                    + escapeHtml(name) + '</button></li>';
             }).join('')
-            : '<li class="pill">Sin ingredientes reconocidos</li>';
+            : '<li><span class="pill pill--static">Sin ingredientes reconocidos</span></li>';
+
+        syncExcludedBar();
 
         $('recipe-cards').innerHTML = (data.recipes || []).map(recipeCard).join('');
+
+        state.showingDemo = opts.demo === true;
+        $('results-demo').classList.toggle('is-hidden', !state.showingDemo);
+
         show($('results'));
-        $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        if (opts.scroll !== false) {
+            $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // --- Descartar ingredientes y rehacer ---------------------------------
+
+    /**
+     * Marca o desmarca un ingrediente. Solo cambia el estado: rehacer las
+     * recetas es una llamada a Gemini y cuesta cuota, asi que no se dispara
+     * sola al pulsar, la pide el usuario con el boton de la barra.
+     */
+    function toggleIngredient(button) {
+        var name = button.dataset.ingredient;
+        var index = state.excluded.indexOf(name);
+
+        if (index === -1) {
+            state.excluded.push(name);
+        } else {
+            state.excluded.splice(index, 1);
+        }
+
+        var off = state.excluded.indexOf(name) !== -1;
+        button.classList.toggle('is-off', off);
+        button.setAttribute('aria-pressed', off ? 'false' : 'true');
+
+        syncExcludedBar();
+    }
+
+    /** Devuelve todos los ingredientes al estado activo. */
+    function restoreIngredients() {
+        state.excluded = [];
+        document.querySelectorAll('#detected-list .pill').forEach(function (pill) {
+            pill.classList.remove('is-off');
+            pill.setAttribute('aria-pressed', 'true');
+        });
+        syncExcludedBar();
+    }
+
+    /** Muestra u oculta la barra de descartados y actualiza su recuento. */
+    function syncExcludedBar() {
+        var bar = $('excluded-bar');
+        var count = state.excluded.length;
+        var kept = state.detected.length - count;
+
+        bar.classList.toggle('is-hidden', count === 0);
+
+        if (count === 0) {
+            return;
+        }
+
+        $('excluded-count').textContent = count === 1
+            ? '1 ingrediente descartado'
+            : count + ' ingredientes descartados';
+
+        // Sin ingredientes no hay nada que cocinar, y el backend lo rechaza.
+        $('btn-regenerate').disabled = kept === 0;
+        $('excluded-hint').textContent = kept === 0
+            ? 'Deja al menos uno para poder rehacer.'
+            : 'Se rehara con los ' + kept + ' restantes. Usa una consulta a Gemini.';
+    }
+
+    /**
+     * Pide 3 recetas nuevas con los ingredientes que quedan. Es una llamada
+     * real al modelo, no un filtrado local: por eso reutiliza el loader con
+     * esqueletos y deja el resultado como un escaneo normal, no como demo.
+     */
+    function regenerate() {
+        var kept = state.detected.filter(function (name) {
+            return state.excluded.indexOf(name) === -1;
+        });
+
+        if (!kept.length) {
+            return;
+        }
+
+        clearAlert();
+        hide($('results'));
+        startLoader();
+        $('btn-regenerate').disabled = true;
+
+        jsonRequest('/recipes/from-ingredients', 'POST', { ingredients: kept })
+            .then(function (data) {
+                state.lastScan = data;
+                renderScanResult(data);
+                toast('Recetas rehechas sin los ingredientes descartados');
+            })
+            .catch(function (error) {
+                showAlert('No se pudieron rehacer las recetas: ' + error.message);
+                show($('results'));
+            })
+            .then(function () {
+                stopLoader();
+                $('btn-regenerate').disabled = false;
+            });
+    }
+
+    /**
+     * Carga la sesion demo al abrir la pagina para que no se vea vacia.
+     * Sale del endpoint sembrado, asi que no gasta cuota de Gemini. Si falla
+     * no se avisa: es contenido de relleno, no algo que el usuario pidio.
+     */
+    function autoLoadDemo() {
+        request('/recipes/demo')
+            .then(function (data) {
+                // Si el usuario ya subio una foto mientras tanto, no la pisamos.
+                if (state.lastScan) {
+                    return;
+                }
+                state.lastScan = data;
+                renderScanResult(data, { demo: true, scroll: false });
+            })
+            .catch(function () {
+                /* Sin demo la pagina sigue siendo usable. */
+            });
     }
 
     // --- Plantillas ------------------------------------------------------
@@ -426,11 +568,28 @@
               + '</div></div>'
             : '';
 
+        // Cuantos ingredientes de la receta ya tienes. Es el dato que decide
+        // si la cocinas hoy o tienes que bajar a comprar, asi que va arriba.
+        var all = recipe.ingredients || [];
+        var have = all.filter(function (ingredient) { return ingredient.available; }).length;
+        var match = all.length
+            ? '<p class="card__match">'
+              + '<span class="card__match-bar" aria-hidden="true">'
+              + '<span style="width: ' + Math.round((have / all.length) * 100) + '%"></span>'
+              + '</span>'
+              + '<span class="card__match-text">Tienes <b>' + have + '</b> de '
+              + all.length + ' ingredientes</span></p>'
+            : '';
+
         return '<article class="card text-animate-card">'
+            + '<header class="card__head card__head--' + difficulty.toLowerCase() + '">'
             + '<h3 class="card__title">' + escapeHtml(recipe.title) + '</h3>'
+            + '<div class="card__meta">' + chips.join('') + '</div>'
+            + '</header>'
+            + '<div class="card__body">'
             + (recipe.description
                 ? '<p class="card__desc">' + escapeHtml(recipe.description) + '</p>' : '')
-            + '<div class="card__meta">' + chips.join('') + '</div>'
+            + match
             + (ingredients
                 ? '<div class="card__block"><h4>Ingredientes</h4>'
                   + '<ul class="ingredients">' + ingredients + '</ul></div>' : '')
@@ -438,6 +597,7 @@
                 ? '<div class="card__block"><h4>Preparacion</h4>'
                   + '<ol class="steps">' + steps + '</ol></div>' : '')
             + tip
+            + '</div>'
             + '<div class="card__footer">'
             + '<button class="btn btn--fav' + (isFavorite ? ' is-on' : '') + '" type="button"'
             + ' data-favorite-id="' + escapeHtml(recipe.id) + '">'
@@ -476,14 +636,34 @@
             });
     }
 
+    /**
+     * Rellena un estado vacio. El boton cambia de papel segun el caso:
+     * sin sesion lleva al login, con sesion lleva a escanear. Antes la
+     * vista invitaba a escanear a quien ni siquiera podia guardar nada.
+     *
+     * @param prefix  "favorites" o "history".
+     * @param action  "login" o "scan".
+     */
+    function setEmpty(prefix, title, text, action) {
+        $(prefix + '-empty-title').textContent = title;
+        $(prefix + '-empty-text').textContent = text;
+
+        var button = $(prefix + '-empty-action');
+        button.textContent = action === 'login' ? 'Iniciar sesion' : 'Escanear una foto';
+        button.dataset.action = action;
+
+        show($(prefix + '-empty'));
+    }
+
     function loadFavorites() {
         var container = $('favorite-cards');
         var empty = $('favorites-empty');
 
         if (!isLoggedIn()) {
             container.innerHTML = '';
-            empty.textContent = 'Inicia sesion para ver tus recetas favoritas.';
-            show(empty);
+            setEmpty('favorites', 'Necesitas una cuenta',
+                'Los favoritos se guardan en tu cuenta para que los tengas en cualquier dispositivo.',
+                'login');
             return;
         }
 
@@ -493,15 +673,15 @@
         request('/recipes/favorites')
             .then(function (recipes) {
                 if (!recipes || !recipes.length) {
-                    empty.textContent = 'Todavia no has guardado ninguna receta.';
-                    show(empty);
+                    setEmpty('favorites', 'Sin favoritos todavia',
+                        'Pulsa la estrella de cualquier receta y la encontraras aqui.',
+                        'scan');
                     return;
                 }
                 container.innerHTML = recipes.map(recipeCard).join('');
             })
             .catch(function (error) {
-                empty.textContent = error.message;
-                show(empty);
+                setEmpty('favorites', 'No se pudieron cargar', error.message, 'scan');
             });
     }
 
@@ -513,8 +693,9 @@
 
         if (!isLoggedIn()) {
             container.innerHTML = '';
-            empty.textContent = 'Inicia sesion para consultar tu historial.';
-            show(empty);
+            setEmpty('history', 'Necesitas una cuenta',
+                'El historial se asocia a tu cuenta: sin ella los escaneos no se guardan.',
+                'login');
             return;
         }
 
@@ -524,8 +705,9 @@
         request('/recipes/history')
             .then(function (sessions) {
                 if (!sessions || !sessions.length) {
-                    empty.textContent = 'Aun no tienes escaneos guardados en tu cuenta.';
-                    show(empty);
+                    setEmpty('history', 'Sin escaneos todavia',
+                        'Analiza tu primera foto y quedara guardada aqui con su resultado completo.',
+                        'scan');
                     return;
                 }
 
@@ -550,8 +732,7 @@
                 }).join('');
             })
             .catch(function (error) {
-                empty.textContent = error.message;
-                show(empty);
+                setEmpty('history', 'No se pudo cargar', error.message, 'scan');
             });
     }
 
@@ -927,11 +1108,44 @@
         });
     }
 
+    /**
+     * Las pildoras se pintan cada vez que llega un resultado, asi que el
+     * listener va en el contenedor y no en cada una.
+     */
+    function bindIngredientPills() {
+        $('detected-list').addEventListener('click', function (event) {
+            var pill = event.target.closest('.pill[data-ingredient]');
+            if (pill) {
+                toggleIngredient(pill);
+            }
+        });
+
+        $('btn-regenerate').addEventListener('click', regenerate);
+        $('btn-restore-ingredients').addEventListener('click', restoreIngredients);
+    }
+
+    /** El boton de cada estado vacio hace una cosa u otra segun setEmpty. */
+    function bindEmptyActions() {
+        ['favorites', 'history'].forEach(function (name) {
+            var button = $(name + '-empty-action');
+            button.addEventListener('click', function () {
+                if (button.dataset.action === 'login') {
+                    openModal('auth-modal');
+                } else {
+                    switchView('scan');
+                }
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         bindEvents();
+        bindEmptyActions();
+        bindIngredientPills();
         renderSession();
         bindGlareCards();
         syncQrButton();
+        autoLoadDemo();
 
         if (handheldQuery.addEventListener) {
             handheldQuery.addEventListener('change', syncQrButton);

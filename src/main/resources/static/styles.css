@@ -962,20 +962,6 @@ a {
     text-align: center;
 }
 
-.loader__spinner {
-    width: 42px;
-    height: 42px;
-    margin: 0 auto 14px;
-    border: 3px solid var(--green-soft);
-    border-top-color: var(--green);
-    border-radius: 50%;
-    animation: spin .85s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
 .loader__text {
     margin: 0;
     font-weight: 600;
@@ -998,12 +984,6 @@ a {
     padding: 13px 16px;
     border-radius: var(--radius-sm);
     font-size: .94rem;
-}
-
-.empty {
-    text-align: center;
-    color: var(--ink-faint);
-    padding: 44px 0;
 }
 
 /* ---------- Paneles y pildoras ---------- */
@@ -1650,10 +1630,6 @@ a {
     .card {
         transition-property: box-shadow;
     }
-
-    .loader__spinner {
-        animation-duration: 1.6s;
-    }
 }
 
 
@@ -1745,12 +1721,6 @@ a {
         border-color: var(--green) !important;
         box-shadow: 0 16px 36px rgba(20, 40, 28, 0.12) !important;
     }
-}
-
-/* Spinner con brillo radiante */
-.loader__spinner {
-    border-top-color: var(--green) !important;
-    box-shadow: 0 0 16px rgba(31, 157, 87, 0.45);
 }
 
 
@@ -2527,4 +2497,664 @@ h1, h2, h3, h4, h5, h6,
     .topbar__auth .btn-arrow {
         display: none !important;
     }
+}
+
+/* ======================================================================
+   ESCENA SVG DEL HERO Y FONDO AMBIENTAL
+   Mismas reglas que el landing (index.html), con los tokens de la app.
+   Dos clases de movimiento y ninguna mas:
+     - Entrada: una vez, con --motion-enter y --motion-pop.
+     - Ambiente: bucle lento (4s o mas) que nunca pide atencion.
+   Todo bucle se apaga en el bloque de prefers-reduced-motion del final.
+   ====================================================================== */
+
+:root {
+    /* Rebote corto para los "pops" de entrada. Unica curva que sobrepasa,
+       y solo en escalas: nunca en colores ni en hover. */
+    --motion-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.food-sprite {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.scene {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.scene-fridge {
+    border-radius: 12px;
+    background: linear-gradient(170deg, var(--green-soft) 0%, var(--cream) 100%);
+    border: 1px solid var(--line);
+}
+
+/*
+ * Las puertas no giran: se separan y se desvanecen. Un rotateY sobre un
+ * SVG plano sin perspectiva se ve como un simple aplastado, y ademas la
+ * puerta derecha acabaria encima del panel de inferencia.
+ */
+.fridge-door {
+    animation: fridge-open 1s var(--motion-ease) 0.45s both;
+}
+
+@keyframes fridge-open {
+    from { transform: translateX(0);                      opacity: 1; }
+    to   { transform: translateX(var(--door-shift, 0px)); opacity: 0; }
+}
+
+.fridge-item {
+    transform-box: fill-box;
+    transform-origin: center bottom;
+    animation: item-pop var(--motion-enter) var(--motion-pop) both;
+    animation-delay: calc(1.1s + var(--motion-stagger) * var(--i, 0));
+}
+
+@keyframes item-pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
+}
+
+.fridge-beam {
+    animation: fridge-beam 4.2s var(--motion-ease) 2s infinite;
+    opacity: 0;
+}
+
+@keyframes fridge-beam {
+    0%        { transform: translateX(0);     opacity: 0; }
+    8%        { opacity: .75; }
+    72%       { opacity: .75; }
+    80%, 100% { transform: translateX(268px); opacity: 0; }
+}
+
+.fridge-box {
+    stroke-dasharray: 210;
+    stroke-dashoffset: 210;
+    animation: box-draw 1.2s var(--motion-ease) 2.6s forwards;
+}
+
+@keyframes box-draw {
+    to { stroke-dashoffset: 0; }
+}
+
+.fridge-leaf {
+    /* Sin transform-box el giro usa el centro del viewBox y la hoja
+       acaba fuera de la escena. */
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: leaf-drift 14s linear 3s infinite;
+    opacity: 0;
+}
+
+@keyframes leaf-drift {
+    0%   { transform: translate(0, 0) rotate(0deg);          opacity: 0; }
+    12%  { opacity: .5; }
+    88%  { opacity: .5; }
+    100% { transform: translate(-8px, 112px) rotate(190deg); opacity: 0; }
+}
+
+.fridge-chill {
+    animation: chill-pulse 6s var(--motion-ease) infinite;
+}
+
+@keyframes chill-pulse {
+    0%, 100% { opacity: .05; }
+    50%      { opacity: .12; }
+}
+
+/* ----------------------------------------------------------------------
+   Fondo ambiental: tres manchas de color muy desenfocadas que se
+   desplazan entre 42s y 64s detras del hero. Es atmosfera, no
+   informacion: ningun dato depende de ellas.
+   ---------------------------------------------------------------------- */
+.ambient {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.ambient__blob {
+    position: absolute;
+    width: 46vw;
+    max-width: 560px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    filter: blur(70px);
+}
+
+.ambient__blob--a {
+    top: -16%;
+    left: -10%;
+    background: radial-gradient(circle, var(--green) 0%, transparent 68%);
+    opacity: .2;
+    animation: blob-a 42s var(--motion-ease) infinite;
+}
+
+.ambient__blob--b {
+    top: 18%;
+    right: -14%;
+    background: radial-gradient(circle, var(--amber) 0%, transparent 68%);
+    opacity: .14;
+    animation: blob-b 56s var(--motion-ease) infinite;
+}
+
+.ambient__blob--c {
+    bottom: -26%;
+    left: 26%;
+    background: radial-gradient(circle, var(--green) 0%, transparent 68%);
+    opacity: .16;
+    animation: blob-c 64s var(--motion-ease) infinite;
+}
+
+@keyframes blob-a {
+    0%, 100% { transform: translate(0, 0)      scale(1); }
+    50%      { transform: translate(16%, 12%)  scale(1.16); }
+}
+
+@keyframes blob-b {
+    0%, 100% { transform: translate(0, 0)      scale(1.08); }
+    50%      { transform: translate(-14%, 16%) scale(1); }
+}
+
+@keyframes blob-c {
+    0%, 100% { transform: translate(0, 0)      scale(1); }
+    50%      { transform: translate(12%, -14%) scale(1.2); }
+}
+
+/* El contenido del hero va por encima de las manchas. */
+.hero__inner {
+    position: relative;
+    z-index: 1;
+}
+
+/* ----------------------------------------------------------------------
+   Sin movimiento: se detiene todo bucle y toda entrada queda en su
+   estado final. La escena sigue siendo legible, solo deja de moverse.
+   ---------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    .fridge-door {
+        animation: none;
+        opacity: 0;
+    }
+
+    .fridge-item {
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
+
+    .fridge-box {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+
+    .fridge-beam,
+    .fridge-leaf {
+        animation: none;
+        opacity: 0;
+    }
+
+    .fridge-chill,
+    .ambient__blob {
+        animation: none;
+    }
+}
+
+/* ======================================================================
+   FRANJA DE PASOS, ESQUELETOS, AVISO DE EJEMPLO, ESTADOS VACIOS Y PIE
+   Todo esto existe por la misma razon: antes de subir una foto la
+   aplicacion no mostraba nada mas que una caja vacia.
+   ====================================================================== */
+
+/* ---------- Franja de pasos ---------- */
+
+.steps-strip {
+    list-style: none;
+    margin: 0 0 26px;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+.steps-strip__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.steps-strip__art {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+}
+
+.steps-strip__title {
+    margin: 0;
+    font-weight: 600;
+    font-size: .95rem;
+    color: var(--ink);
+}
+
+.steps-strip__title b {
+    color: var(--green);
+    font-family: var(--mono);
+    margin-right: 2px;
+}
+
+.steps-strip__text {
+    margin: 2px 0 0;
+    font-size: .86rem;
+    color: var(--ink-soft);
+}
+
+/* ---------- Esqueletos de carga ---------- */
+
+.skeletons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+    margin-top: 22px;
+    text-align: left;
+}
+
+.skeleton-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px;
+    background: var(--bg-elev);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+}
+
+/*
+ * El barrido va en un gradiente de fondo, no en un pseudoelemento que se
+ * desplace: asi no hay nada que pueda desbordar la tarjeta.
+ */
+.skeleton {
+    display: block;
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+        var(--cream) 0%, var(--cream-deep) 40%, var(--cream) 80%);
+    background-size: 280% 100%;
+    animation: skeleton-sweep 1.4s var(--motion-ease) infinite;
+}
+
+.skeleton--title  { height: 18px; width: 72%; }
+.skeleton--line   { width: 100%; }
+.skeleton--short  { width: 58%; }
+.skeleton--chips  { height: 26px; width: 64%; border-radius: 13px; margin-top: 4px; }
+
+@keyframes skeleton-sweep {
+    from { background-position: 180% 0; }
+    to   { background-position: -80% 0; }
+}
+
+/* ---------- Aviso de resultado de ejemplo ---------- */
+
+.results__demo {
+    margin: 0 0 18px;
+    padding: 11px 15px;
+    background: var(--amber-soft);
+    border: 1px solid #f0d9ae;
+    border-radius: var(--radius-sm);
+    color: #7a4b12;
+    font-size: .9rem;
+}
+
+/* ---------- Estados vacios ---------- */
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--ink-faint);
+    padding: 52px 20px;
+}
+
+.empty__art {
+    width: 132px;
+    height: 88px;
+    margin-bottom: 6px;
+}
+
+.empty__title {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+.empty__text {
+    margin: 0 0 14px;
+    max-width: 44ch;
+    color: var(--ink-soft);
+    font-size: .94rem;
+}
+
+/* ---------- Pie ---------- */
+
+.footer__inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    text-align: left;
+}
+
+.footer__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.footer__mark {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.footer__name {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 700;
+    color: var(--ink);
+    font-size: .98rem;
+}
+
+.footer__by {
+    margin: 0;
+    font-size: .84rem;
+}
+
+.footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.footer__links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-weight: 600;
+    transition-property: color;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+@media (hover: hover) {
+    .footer__links a:hover {
+        color: var(--green-dark);
+    }
+}
+
+.footer__stack {
+    max-width: 1080px;
+    margin: 16px auto 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    font-size: .82rem;
+}
+
+@media (max-width: 640px) {
+    .footer__inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* Sin movimiento el esqueleto deja de barrer y se queda como bloque gris. */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+        background: var(--cream-deep);
+    }
+}
+
+/* ======================================================================
+   PILDORAS DESCARTABLES Y TARJETA DE RECETA REDISENADA
+   ====================================================================== */
+
+/* ---------- Pildoras de ingrediente ---------- */
+
+.panel__hint {
+    margin: -4px 0 12px;
+    font-size: .88rem;
+    color: var(--ink-faint);
+}
+
+/*
+ * La pildora es un boton: el estado se lee por color, por el icono y por
+ * aria-pressed, nunca solo por el tachado, que no llega al lector.
+ */
+.pill[data-ingredient] {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition-property: background-color, border-color, color, scale;
+    transition-duration: var(--motion-fast);
+    transition-timing-function: var(--motion-ease);
+}
+
+.pill__mark {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.pill__mark::after {
+    content: "";
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    background: currentColor;
+    transition: scale var(--motion-fast) var(--motion-ease);
+}
+
+.pill.is-off {
+    background: var(--cream);
+    border-color: var(--line);
+    color: var(--ink-faint);
+    text-decoration: line-through;
+}
+
+.pill.is-off .pill__mark::after {
+    scale: 0;
+}
+
+.pill[data-ingredient]:not(:disabled):active {
+    scale: var(--motion-press);
+}
+
+@media (hover: hover) {
+    .pill[data-ingredient]:hover {
+        border-color: var(--green);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pill[data-ingredient]:not(:disabled):active {
+        scale: 1;
+    }
+}
+
+/* ---------- Barra de descartados ---------- */
+
+.excluded-bar {
+    margin-top: 16px;
+    padding: 13px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--amber-soft);
+    border: 1px solid #f0d9ae;
+    border-radius: var(--radius-sm);
+}
+
+.excluded-bar__text {
+    display: flex;
+    flex-direction: column;
+    font-size: .9rem;
+    color: #7a4b12;
+}
+
+.excluded-bar__text span {
+    font-size: .84rem;
+    opacity: .85;
+}
+
+.excluded-bar__actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ---------- Tarjeta de receta ---------- */
+
+.card {
+    padding: 0;
+    gap: 0;
+    overflow: hidden;
+}
+
+/*
+ * Franja superior. El color del borde izquierdo codifica la dificultad,
+ * pero nunca va solo: el chip de al lado la dice con palabras.
+ */
+.card__head {
+    padding: 18px 20px 14px;
+    background: linear-gradient(180deg, var(--cream) 0%, var(--bg-elev) 100%);
+    border-bottom: 1px solid var(--line);
+    border-left: 4px solid var(--ink-faint);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.card__head--facil   { border-left-color: var(--green); }
+.card__head--media   { border-left-color: var(--amber); }
+.card__head--dificil { border-left-color: var(--red); }
+
+.card__body {
+    padding: 16px 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.card__footer {
+    margin-top: auto;
+    padding: 0 20px 18px;
+}
+
+/* ---------- Indicador de ingredientes que ya tienes ---------- */
+
+.card__match {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+.card__match-bar {
+    display: block;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--cream-deep);
+    overflow: hidden;
+}
+
+.card__match-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--green);
+}
+
+.card__match-text {
+    font-size: .85rem;
+    color: var(--ink-soft);
+}
+
+.card__match-text b {
+    color: var(--green-dark);
+}
+
+/* ---------- Pasos con hilo conductor ---------- */
+
+.steps {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: paso;
+    gap: 0;
+}
+
+.steps li {
+    counter-increment: paso;
+    position: relative;
+    padding: 0 0 14px 34px;
+}
+
+.steps li::before {
+    content: counter(paso);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--green-soft);
+    color: var(--green-dark);
+    font-family: var(--mono);
+    font-size: .75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* El hilo une un paso con el siguiente; el ultimo no lo lleva. */
+.steps li::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    top: 24px;
+    bottom: 2px;
+    width: 2px;
+    background: var(--line);
+}
+
+.steps li:last-child {
+    padding-bottom: 0;
+}
+
+.steps li:last-child::after {
+    display: none;
 }

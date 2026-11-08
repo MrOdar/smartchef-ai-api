@@ -2,6 +2,7 @@ package com.smartchef.api.controller;
 
 import com.smartchef.api.dto.ApiErrorResponse;
 import com.smartchef.api.dto.FavoriteToggleResponse;
+import com.smartchef.api.dto.IngredientsRequest;
 import com.smartchef.api.dto.RecipeResponse;
 import com.smartchef.api.dto.ScanResultResponse;
 import com.smartchef.api.security.SmartChefUserDetails;
@@ -14,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.MediaType;
@@ -22,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,6 +68,31 @@ public class RecipeController {
 
         Long userId = principal == null ? null : principal.getId();
         return ResponseEntity.ok(recipeService.generateFromImage(image, userId));
+    }
+
+    @PostMapping("/from-ingredients")
+    @Operation(summary = "Rehacer 3 recetas a partir de una lista de ingredientes",
+            description = """
+                    Genera 3 recetas nuevas usando solo los ingredientes que envies, sin imagen.
+                    Pensado para cuando el usuario descarta alguno de los ingredientes detectados
+                    en un escaneo: la foto no se almacena, asi que no hay nada que reanalizar.
+
+                    **Consume cuota de Gemini** igual que una foto nueva. Acepta como maximo 40
+                    ingredientes de 60 caracteres cada uno. Funciona con o sin token JWT: con
+                    token, la sesion resultante queda en tu historial.""")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Recetas generadas con esos ingredientes"),
+            @ApiResponse(responseCode = "400", description = "Lista vacia o fuera de los limites",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "503", description = "El servicio de IA no esta disponible",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
+    })
+    public ResponseEntity<ScanResultResponse> generateFromIngredients(
+            @Valid @RequestBody IngredientsRequest request,
+            @AuthenticationPrincipal SmartChefUserDetails principal) {
+
+        Long userId = principal == null ? null : principal.getId();
+        return ResponseEntity.ok(recipeService.generateFromIngredients(request.ingredients(), userId));
     }
 
     @GetMapping("/demo")

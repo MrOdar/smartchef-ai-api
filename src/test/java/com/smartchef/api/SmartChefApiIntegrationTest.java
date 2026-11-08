@@ -6,10 +6,13 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -30,9 +33,11 @@ import com.smartchef.api.repository.UserRepository;
 import com.smartchef.api.service.DemoDataSeeder;
 import com.smartchef.api.service.GeminiVisionService;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -289,6 +294,75 @@ class SmartChefApiIntegrationTest {
                 .andExpect(jsonPath("$.recipes[0].ingredients[2].available", is(false)))
                 .andExpect(jsonPath("$.recipes[1].difficulty", is("MEDIA")))
                 .andExpect(jsonPath("$.recipes[2].difficulty", is("DIFICIL")));
+    }
+
+    // --- Rehacer recetas desde una lista de ingredientes -------------------
+
+    @Test
+    @DisplayName("Rehace 3 recetas desde la lista de ingredientes que manda el usuario")
+    void generatesRecipesFromIngredientList() throws Exception {
+        given(geminiVisionService.generateFromIngredients(anyList()))
+                .willReturn(TestDataFactory.sampleResult());
+
+        mockMvc.perform(post("/api/v1/recipes/from-ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ingredients\":[\"tomate\",\"huevo\",\"cebolla\"]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scanSessionId", notNullValue()))
+                .andExpect(jsonPath("$.recipes", hasSize(3)));
+
+        // La lista debe llegar tal cual al servicio: el filtrado es del usuario.
+        ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
+        verify(geminiVisionService).generateFromIngredients(captor.capture());
+        assertThat(captor.getValue()).containsExactly("tomate", "huevo", "cebolla");
+    }
+
+    @Test
+    @DisplayName("La sesion rehecha se guarda y aparece en el historial del usuario")
+    void regeneratedSessionIsPersisted() throws Exception {
+        given(geminiVisionService.generateFromIngredients(anyList()))
+                .willReturn(TestDataFactory.sampleResult());
+
+        String token = registerAndGetToken("chef_filtra", "filtra@smartchef.test");
+
+        mockMvc.perform(post("/api/v1/recipes/from-ingredients")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ingredients\":[\"tomate\",\"huevo\"]}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/recipes/history")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("Rechaza una lista de ingredientes vacia sin llamar a Gemini")
+    void rejectsEmptyIngredientList() throws Exception {
+        mockMvc.perform(post("/api/v1/recipes/from-ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ingredients\":[]}"))
+                .andExpect(status().isBadRequest());
+
+        verify(geminiVisionService, never()).generateFromIngredients(anyList());
+    }
+
+    @Test
+    @DisplayName("Rechaza mas de 40 ingredientes sin llamar a Gemini")
+    void rejectsOversizedIngredientList() throws Exception {
+        StringBuilder body = new StringBuilder("{\"ingredients\":[");
+        for (int i = 0; i < 41; i++) {
+            body.append(i > 0 ? "," : "").append("\"ingrediente ").append(i).append('"');
+        }
+        body.append("]}");
+
+        mockMvc.perform(post("/api/v1/recipes/from-ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body.toString()))
+                .andExpect(status().isBadRequest());
+
+        verify(geminiVisionService, never()).generateFromIngredients(anyList());
     }
 
     @Test

@@ -832,50 +832,67 @@
     }
 
     /* ==================== MAGIC UI: MARQUEE ==================== */
-    .marquee-container {
+    /*
+     * Banda de alimentos. Sustituye al marquee en bucle infinito: aquel se
+     * repetia para siempre sin decir nada y es un recurso de plantilla.
+     * Esta no se mueve sola, entra escalonada al llegar y usa las mismas
+     * ilustraciones que las escenas.
+     */
+    .pantry-strip {
       width: 100%;
-      overflow: hidden;
-      padding: 24px 0;
+      padding: 30px 0 34px;
       background: var(--bg-alt);
       border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border);
-      position: relative;
-      mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
-      -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
     }
 
-    .marquee-track {
+    .pantry-strip__label {
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+      margin-bottom: 20px;
+    }
+
+    .pantry-strip__list {
+      list-style: none;
       display: flex;
-      width: max-content;
-      gap: 16px;
-      animation: marquee-scroll 28s linear infinite;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 14px 10px;
+    }
+
+    .pantry-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      width: 84px;
+      padding: 10px 4px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--ink-secondary);
+      transition-property: background-color, border-color, color, translate;
+      transition-duration: var(--motion-fast);
+      transition-timing-function: var(--motion-ease);
+    }
+
+    .pantry-item__art {
+      width: 40px;
+      height: 40px;
     }
 
     @media (hover: hover) {
-      .marquee-track:hover {
-        animation-play-state: paused;
+      .pantry-item:hover {
+        translate: 0 -3px;
+        background: var(--card);
+        border-color: var(--border);
+        color: var(--ink);
       }
-    }
-
-    .marquee-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--card);
-      border: 1px solid var(--border);
-      padding: 8px 18px;
-      border-radius: var(--radius-pill);
-      font-size: 0.88rem;
-      font-weight: 600;
-      color: var(--ink);
-      box-shadow: var(--shadow-sm);
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    @keyframes marquee-scroll {
-      0% { transform: translateX(0); }
-      100% { transform: translateX(-50%); }
     }
 
     /* ==================== SECCIONES GLOBALES ==================== */
@@ -1573,7 +1590,6 @@
       }
 
       /* Decoracion en bucle: aporta cero informacion, se detiene. */
-      .marquee-track,
       .btn-cta-giant,
       .border-beam,
       .pulse-dot,
@@ -1591,10 +1607,529 @@
         scale: 1;
       }
     }
+
+    /* ======================================================================
+       ESCENAS SVG ANIMADAS
+       Ilustraciones dibujadas a mano, sin imagenes ni dependencias externas.
+       Dos clases de movimiento, y ninguna mas:
+         - Entrada: una vez, con --motion-enter y --motion-pop.
+         - Ambiente: bucle lento (6s o mas) que nunca pide atencion.
+       Todo bucle se apaga en el bloque de prefers-reduced-motion del final.
+       ====================================================================== */
+
+    :root {
+      /* Rebote corto para los "pops" de entrada. Es la unica curva que
+         sobrepasa, y solo se usa en escalas, nunca en colores ni en hover. */
+      --motion-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .scene {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    /* --- Escena del hero: la nevera que se abre y se escanea -------------- */
+
+    .scene-fridge {
+      border-radius: var(--radius-md);
+      background: linear-gradient(170deg, var(--accent-soft) 0%, var(--card-subtle) 100%);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    /*
+     * Las puertas no giran: se separan y se desvanecen. Un rotateY sobre un
+     * SVG plano sin perspectiva se ve como un simple aplastado, y ademas la
+     * puerta derecha acabaria encima del panel de inferencia.
+     */
+    .fridge-door {
+      animation: fridge-open 1s var(--motion-ease) 0.45s both;
+    }
+
+    @keyframes fridge-open {
+      from { transform: translateX(0);                      opacity: 1; }
+      to   { transform: translateX(var(--door-shift, 0px)); opacity: 0; }
+    }
+
+    /* Cada alimento entra con rebote, uno detras de otro. */
+    .fridge-item {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: item-pop var(--motion-enter) var(--motion-pop) both;
+      animation-delay: calc(1.1s + var(--motion-stagger) * var(--i, 0));
+    }
+
+    @keyframes item-pop {
+      from { transform: scale(0); opacity: 0; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+
+    /* Haz de escaneo: recorre la nevera de izquierda a derecha sin parar. */
+    .fridge-beam {
+      animation: fridge-beam 4.2s var(--motion-ease) 2s infinite;
+      opacity: 0;
+    }
+
+    @keyframes fridge-beam {
+      0%        { transform: translateX(0);     opacity: 0; }
+      8%        { opacity: .85; }
+      72%       { opacity: .85; }
+      80%, 100% { transform: translateX(268px); opacity: 0; }
+    }
+
+    /* El recuadro de deteccion se dibuja solo cuando el haz ya paso. */
+    .fridge-box {
+      stroke-dasharray: 210;
+      stroke-dashoffset: 210;
+      animation: box-draw 1.2s var(--motion-ease) 2.6s forwards;
+    }
+
+    @keyframes box-draw {
+      to { stroke-dashoffset: 0; }
+    }
+
+    /* Vapor y hoja: ambiente lento, nunca sincronizado con lo demas. */
+    .fridge-leaf {
+      /* Sin transform-box el giro usa el centro del viewBox y la hoja
+         acaba fuera de la escena. */
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: leaf-drift 14s linear 3s infinite;
+      opacity: 0;
+    }
+
+    @keyframes leaf-drift {
+      0%   { transform: translate(0, 0) rotate(0deg);        opacity: 0; }
+      12%  { opacity: .55; }
+      88%  { opacity: .55; }
+      100% { transform: translate(-8px, 112px) rotate(190deg); opacity: 0; }
+    }
+
+    .fridge-chill {
+      animation: chill-pulse 6s var(--motion-ease) infinite;
+    }
+
+    @keyframes chill-pulse {
+      0%, 100% { opacity: .05; }
+      50%      { opacity: .12; }
+    }
+
+    /* --- Escenas de los 3 pasos ------------------------------------------ */
+
+    .scene-step {
+      height: 118px;
+      margin-bottom: 16px;
+      border-radius: var(--radius-sm);
+      background: var(--card-subtle);
+      border: 1px solid var(--border);
+    }
+
+    /* El obturador late despacio: es un indicador, no una alarma. */
+    .shutter-ring {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: shutter-pulse 3.4s var(--motion-ease) infinite;
+    }
+
+    @keyframes shutter-pulse {
+      0%, 100% { transform: scale(1);    opacity: .85; }
+      50%      { transform: scale(1.14); opacity: .35; }
+    }
+
+    .shutter-flash {
+      animation: shutter-flash 3.4s var(--motion-ease) infinite;
+    }
+
+    @keyframes shutter-flash {
+      0%, 86%, 100% { opacity: 0; }
+      90%           { opacity: .7; }
+    }
+
+    /* Las conexiones de la red se recorren como una corriente. */
+    .net-link {
+      stroke-dasharray: 5 7;
+      animation: net-flow 2.4s linear infinite;
+    }
+
+    @keyframes net-flow {
+      to { stroke-dashoffset: -24; }
+    }
+
+    .net-node {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: net-node 2.8s var(--motion-ease) infinite;
+      animation-delay: calc(var(--motion-stagger) * var(--i, 0) * 2);
+    }
+
+    @keyframes net-node {
+      0%, 100% { transform: scale(1);   opacity: .9; }
+      50%      { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* Las 3 fichas de receta se reparten como una baraja. */
+    .deal-card {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: deal 5s var(--motion-ease) infinite;
+      animation-delay: calc(var(--motion-stagger) * var(--i, 0) * 2);
+    }
+
+    @keyframes deal {
+      0%       { transform: translate(0, 10px) rotate(0deg); opacity: 0; }
+      12%, 78% { transform: none;                            opacity: 1; }
+      92%, 100%{ transform: translate(0, -8px) rotate(0deg); opacity: 0; }
+    }
+
+    .steam {
+      animation: steam-rise 5.5s var(--motion-ease) infinite;
+      opacity: 0;
+    }
+
+    .steam--b { animation-delay: 1.3s; }
+    .steam--c { animation-delay: 2.6s; }
+
+    @keyframes steam-rise {
+      0%   { transform: translateY(0) scaleX(1);      opacity: 0; }
+      22%  { opacity: .55; }
+      100% { transform: translateY(-22px) scaleX(1.5); opacity: 0; }
+    }
+
+    /* Linea que recorre los 3 pasos y los cuenta como una secuencia. */
+    @media (min-width: 900px) {
+      .steps-grid {
+        position: relative;
+      }
+
+      .steps-grid::before {
+        content: "";
+        position: absolute;
+        top: 78px;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        background-image: repeating-linear-gradient(90deg,
+            var(--accent) 0 10px, transparent 10px 20px);
+        background-size: 20px 2px;
+        opacity: .35;
+        animation: steps-flow 1.6s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .step-card {
+        position: relative;
+        z-index: 1;
+      }
+    }
+
+    @keyframes steps-flow {
+      to { background-position: 20px 0; }
+    }
+
+    /* --- Divisor de onda entre secciones --------------------------------- */
+
+    /*
+     * El divisor pinta el fondo de la seccion que viene debajo, asi que
+     * --wave-fill cambia segun hacia donde vaya el corte. Por defecto entra
+     * en una seccion alterna; --wave-fill: var(--bg) la devuelve al fondo base.
+     */
+    .wave-divider {
+      display: block;
+      width: 100%;
+      height: 72px;
+      margin: 0 0 -1px;
+      overflow: hidden;
+      line-height: 0;
+      pointer-events: none;
+      --wave-fill: var(--bg-alt);
+    }
+
+    .wave-divider svg {
+      display: block;
+      width: 220%;
+      height: 100%;
+    }
+
+    .wave-back {
+      fill: var(--accent);
+      opacity: .16;
+      animation: wave-drift 34s linear infinite;
+    }
+
+    .wave-front {
+      fill: var(--wave-fill);
+      animation: wave-drift 22s linear infinite reverse;
+    }
+
+    /*
+     * Filo de la cresta. Entre dos secciones de color casi igual la onda
+     * no se leeria, asi que esta linea marca siempre el corte. Va a la
+     * misma velocidad que la onda frontal para no separarse de ella.
+     * non-scaling-stroke es obligatorio: con preserveAspectRatio="none"
+     * el trazo se deformaria al estirar el viewBox.
+     */
+    .wave-line {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 2;
+      vector-effect: non-scaling-stroke;
+      opacity: .3;
+      animation: wave-drift 22s linear infinite reverse;
+    }
+
+    @keyframes wave-drift {
+      to { transform: translateX(-50%); }
+    }
+
+    /* --- Ambiente del pie ------------------------------------------------- */
+
+    .footer {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .footer::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-image: repeating-linear-gradient(90deg,
+          var(--accent) 0 18px, transparent 18px 36px);
+      background-size: 36px 2px;
+      opacity: .3;
+      animation: steps-flow 2.4s linear infinite;
+    }
+
+    .footer-pot {
+      width: 54px;
+      height: 46px;
+      flex-shrink: 0;
+    }
+
+    /* ----------------------------------------------------------------------
+       Fondo ambiental: tres manchas de color muy desenfocadas que se
+       desplazan entre 42s y 64s detras del hero. Es atmosfera, no
+       informacion: ningun dato depende de ellas y nunca llaman la atencion.
+       ---------------------------------------------------------------------- */
+    .ambient {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .ambient__blob {
+      position: absolute;
+      width: 46vw;
+      max-width: 620px;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      filter: blur(70px);
+    }
+
+    .ambient__blob--a {
+      top: -16%;
+      left: -10%;
+      background: radial-gradient(circle, var(--accent) 0%, transparent 68%);
+      opacity: .22;
+      animation: blob-a 42s var(--motion-ease) infinite;
+    }
+
+    .ambient__blob--b {
+      top: 18%;
+      right: -14%;
+      background: radial-gradient(circle, var(--amber) 0%, transparent 68%);
+      opacity: .16;
+      animation: blob-b 56s var(--motion-ease) infinite;
+    }
+
+    .ambient__blob--c {
+      bottom: -26%;
+      left: 26%;
+      background: radial-gradient(circle, var(--accent-bright) 0%, transparent 68%);
+      opacity: .18;
+      animation: blob-c 64s var(--motion-ease) infinite;
+    }
+
+    @keyframes blob-a {
+      0%, 100% { transform: translate(0, 0)       scale(1); }
+      50%      { transform: translate(16%, 12%)   scale(1.16); }
+    }
+
+    @keyframes blob-b {
+      0%, 100% { transform: translate(0, 0)       scale(1.08); }
+      50%      { transform: translate(-14%, 16%)  scale(1); }
+    }
+
+    @keyframes blob-c {
+      0%, 100% { transform: translate(0, 0)       scale(1); }
+      50%      { transform: translate(12%, -14%)  scale(1.2); }
+    }
+
+    /* El contenido del hero va por encima de las manchas. */
+    .hero-section > .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ----------------------------------------------------------------------
+       Sin movimiento: se detiene todo bucle y toda entrada queda en su
+       estado final. La escena sigue siendo legible, solo deja de moverse.
+       ---------------------------------------------------------------------- */
+    @media (prefers-reduced-motion: reduce) {
+      .ambient__blob {
+        animation: none;
+      }
+
+      .fridge-door {
+        animation: none;
+        opacity: 0;
+      }
+
+      .fridge-item,
+      .deal-card,
+      .net-node {
+        animation: none;
+        opacity: 1;
+        transform: none;
+      }
+
+      .fridge-box {
+        animation: none;
+        stroke-dashoffset: 0;
+      }
+
+      .fridge-beam,
+      .fridge-leaf,
+      .steam,
+      .shutter-flash {
+        animation: none;
+        opacity: 0;
+      }
+
+      .fridge-chill,
+      .shutter-ring,
+      .net-link,
+      .wave-back,
+      .wave-front,
+      .wave-line {
+        animation: none;
+      }
+
+      .steps-grid::before,
+      .footer::before {
+        animation: none;
+      }
+    }
   </style>
 </head>
 <body data-nav-mode="topbar">
   <div class="scroll-progress" id="scroll-progress"></div>
+  <!--
+    Alimentos dibujados a mano, una sola vez, para reusarlos con <use> en
+    todas las escenas. Los colores son literales a proposito: un tomate es
+    rojo en tema claro y en tema oscuro, no sigue el acento de la marca.
+    No se sirve como archivo aparte porque Chrome no resuelve <use> hacia
+    otro documento SVG; va embebido en cada pagina.
+  -->
+  <svg class="food-sprite" aria-hidden="true" focusable="false" width="0" height="0">
+    <defs>
+      <symbol id="f-tomato" viewBox="0 0 40 40">
+        <circle cx="20" cy="24" r="14" fill="#E0533F" />
+        <path d="M20 10 A14 14 0 0 1 20 38 A10 14 0 0 0 20 10 Z" fill="#C23B2B" opacity=".45" />
+        <ellipse cx="14" cy="18" rx="4" ry="3" fill="#FFFFFF" opacity=".35" />
+        <path d="M20 16 L12 8 L16 14 L8 13 L15 18 L20 15 L25 18 L32 13 L24 14 L28 8 Z" fill="#3E8E4A" />
+        <rect x="19" y="3" width="2.4" height="6" rx="1.2" fill="#2F6F3A" />
+      </symbol>
+
+      <symbol id="f-egg" viewBox="0 0 40 40">
+        <path d="M20 37 C12 37 8 31 8 25 C8 15 14 4 20 4 C26 4 32 15 32 25 C32 31 28 37 20 37 Z" fill="#F6EEDC" />
+        <path d="M26 12 C30 17 32 22 32 25 C32 31 28 37 20 37 C25 33 28 25 26 12 Z" fill="#E4D6B8" opacity=".7" />
+        <ellipse cx="15" cy="16" rx="3" ry="4.5" fill="#FFFFFF" opacity=".75" />
+      </symbol>
+
+      <symbol id="f-onion" viewBox="0 0 40 40">
+        <path d="M20 37 C11 37 5 31 5 24 C5 16 12 10 20 10 C28 10 35 16 35 24 C35 31 29 37 20 37 Z" fill="#B9739F" />
+        <g fill="none" stroke="#8E4C79" stroke-width="1.4" stroke-linecap="round">
+          <path d="M20 11 C15 19 15 29 20 36" />
+          <path d="M20 11 C25 19 25 29 20 36" />
+          <path d="M12 14 C9 20 9 28 13 33" />
+          <path d="M28 14 C31 20 31 28 27 33" />
+        </g>
+        <g fill="none" stroke="#4F9A52" stroke-width="2" stroke-linecap="round">
+          <path d="M20 11 C19 6 17 3 14 1" />
+          <path d="M20 11 C21 6 23 3 26 2" />
+        </g>
+      </symbol>
+
+      <symbol id="f-cheese" viewBox="0 0 40 40">
+        <path d="M3 30 L37 13 L37 29 L3 30 Z" fill="#E8B830" />
+        <path d="M3 30 L37 13 L33 9 L3 25 Z" fill="#F7DC82" />
+        <circle cx="12" cy="27" r="2.6" fill="#D29F1F" />
+        <circle cx="22" cy="25" r="2" fill="#D29F1F" />
+        <circle cx="30" cy="22" r="2.4" fill="#D29F1F" />
+      </symbol>
+
+      <symbol id="f-broccoli" viewBox="0 0 40 40">
+        <path d="M17 38 L23 38 L22 23 L18 23 Z" fill="#A7C98F" />
+        <circle cx="13" cy="19" r="7" fill="#3E8E4A" />
+        <circle cx="27" cy="19" r="7" fill="#3E8E4A" />
+        <circle cx="20" cy="13" r="8" fill="#4FA85C" />
+        <circle cx="16" cy="24" r="6" fill="#4FA85C" />
+        <circle cx="25" cy="24" r="6" fill="#3E8E4A" />
+      </symbol>
+
+      <symbol id="f-carrot" viewBox="0 0 40 40">
+        <path d="M20 38 L12 16 C15 12 25 12 28 16 Z" fill="#E8822A" />
+        <g fill="none" stroke="#C4661A" stroke-width="1.3" stroke-linecap="round">
+          <path d="M15 20 L19 21" />
+          <path d="M17 26 L21 27" />
+          <path d="M18 32 L21 32" />
+        </g>
+        <g fill="none" stroke="#4F9A52" stroke-width="2.2" stroke-linecap="round">
+          <path d="M20 14 C19 8 16 4 12 2" />
+          <path d="M20 14 C20 8 20 5 20 1" />
+          <path d="M20 14 C21 8 24 4 28 2" />
+        </g>
+      </symbol>
+
+      <symbol id="f-lemon" viewBox="0 0 40 40">
+        <ellipse cx="20" cy="22" rx="14" ry="11" fill="#F2D22E" />
+        <circle cx="5" cy="22" r="2.6" fill="#DFBB1F" />
+        <circle cx="35" cy="22" r="2.6" fill="#DFBB1F" />
+        <ellipse cx="14" cy="17" rx="5" ry="3" fill="#FFFFFF" opacity=".35" />
+      </symbol>
+
+      <symbol id="f-pepper" viewBox="0 0 40 40">
+        <path d="M10 21 C10 15 14 11 20 11 C26 11 30 15 30 21 C30 30 26 37 20 37 C14 37 10 30 10 21 Z" fill="#D93D33" />
+        <path d="M20 11 C23 16 23 31 20 37 C26 37 30 30 30 21 C30 15 26 11 20 11 Z" fill="#BE2E26" opacity=".55" />
+        <ellipse cx="15" cy="18" rx="2.6" ry="4" fill="#FFFFFF" opacity=".3" />
+        <ellipse cx="20" cy="11" rx="6.5" ry="2.6" fill="#4F9A52" />
+        <rect x="18.7" y="3" width="2.6" height="8" rx="1.3" fill="#3E8E4A" />
+      </symbol>
+
+      <symbol id="f-milk" viewBox="0 0 40 40">
+        <path d="M11 38 L29 38 L29 15 L20 5 L11 15 Z" fill="#FFFFFF" stroke="#D3DAD4" stroke-width="1.4" />
+        <path d="M11 15 L20 5 L29 15 Z" fill="#E4F0E8" />
+        <rect x="14" y="21" width="12" height="10" rx="2.5" fill="#1E8E4D" />
+        <path d="M17 26 L19 28 L23 24" fill="none" stroke="#FFFFFF" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+
+      <symbol id="f-zucchini" viewBox="0 0 40 40">
+        <path d="M6 33 C6 21 15 11 27 9 C31 13 31 19 27 23 C19 30 13 35 6 33 Z" fill="#2F7D46" />
+        <path d="M12 27 C16 20 21 15 27 12" fill="none" stroke="#4FA85C" stroke-width="2" stroke-linecap="round" />
+        <rect x="27" y="4" width="3" height="7" rx="1.5" fill="#6B8F55" transform="rotate(28 28.5 7.5)" />
+      </symbol>
+    </defs>
+  </svg>
+
 
   <!-- ==================== NAVBAR ==================== -->
   <header class="topbar">
@@ -1636,6 +2171,13 @@
 
   <!-- ==================== 1. HERO SECTION (KINETIC TEXT & TEXT ANIMATE) ==================== -->
   <section class="hero-section" id="inicio">
+    <!-- Fondo ambiental. Decorativo: no aporta informacion, por eso aria-hidden. -->
+    <div class="ambient" aria-hidden="true">
+      <span class="ambient__blob ambient__blob--a"></span>
+      <span class="ambient__blob ambient__blob--b"></span>
+      <span class="ambient__blob ambient__blob--c"></span>
+    </div>
+
     <div class="container">
       <div class="hero-grid">
         <!-- Columna de Texto -->
@@ -1708,6 +2250,82 @@
               <span style="font-family: var(--mono); font-size: 0.78rem; color: var(--ink-muted);">API v3.8 Live</span>
             </div>
 
+            <!--
+              Escena dibujada a mano: las puertas se abren, los alimentos
+              entran uno a uno, el haz recorre el interior y el recuadro de
+              deteccion se dibuja detras de el. Cero imagenes, cero librerias.
+            -->
+            <svg class="scene scene-fridge" viewBox="0 0 300 170" role="img"
+                 aria-label="Ilustracion: una refrigeradora se abre y Gemini reconoce los alimentos de su interior.">
+              <defs>
+                <linearGradient id="beamGrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%"   style="stop-color: var(--accent); stop-opacity: 0" />
+                  <stop offset="50%"  style="stop-color: var(--accent-bright); stop-opacity: .9" />
+                  <stop offset="100%" style="stop-color: var(--accent); stop-opacity: 0" />
+                </linearGradient>
+                <clipPath id="fridgeInner">
+                  <rect x="28" y="22" width="152" height="126" rx="10" />
+                </clipPath>
+              </defs>
+
+              <!-- Cuerpo -->
+              <rect x="18" y="12" width="172" height="146" rx="14"
+                    style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+              <rect x="28" y="22" width="152" height="126" rx="10"
+                    style="fill: var(--card-subtle);" />
+              <rect class="fridge-chill" x="28" y="22" width="152" height="126" rx="10"
+                    style="fill: var(--accent);" />
+
+              <g clip-path="url(#fridgeInner)">
+                <!-- Estantes -->
+                <line x1="30" y1="70" x2="178" y2="70" style="stroke: var(--border-strong);" stroke-width="2" />
+                <line x1="30" y1="114" x2="178" y2="114" style="stroke: var(--border-strong);" stroke-width="2" />
+
+                <!-- Alimentos: cada uno entra con rebote, 100ms detras del anterior -->
+                <use class="fridge-item" style="--i: 0;" href="#f-tomato"   x="38"  y="42" width="28" height="28" />
+                <use class="fridge-item" style="--i: 1;" href="#f-egg"      x="68"  y="42" width="26" height="28" />
+                <use class="fridge-item" style="--i: 2;" href="#f-onion"    x="96"  y="42" width="28" height="28" />
+                <use class="fridge-item" style="--i: 3;" href="#f-cheese"   x="126" y="42" width="30" height="28" />
+                <use class="fridge-item" style="--i: 4;" href="#f-broccoli" x="36"  y="86" width="28" height="28" />
+                <use class="fridge-item" style="--i: 5;" href="#f-pepper"   x="66"  y="86" width="28" height="28" />
+                <use class="fridge-item" style="--i: 6;" href="#f-lemon"    x="96"  y="86" width="28" height="28" />
+                <use class="fridge-item" style="--i: 7;" href="#f-milk"     x="128" y="86" width="26" height="28" />
+
+                <!-- Recuadro de deteccion y haz de escaneo -->
+                <rect class="fridge-box" x="40" y="44" width="56" height="28" rx="6"
+                      style="fill: none; stroke: var(--accent);" stroke-width="2" />
+                <rect class="fridge-beam" x="26" y="22" width="14" height="126" fill="url(#beamGrad)" />
+              </g>
+
+              <!-- Puertas que se abren una sola vez al cargar -->
+              <g class="fridge-door fridge-door--left" style="--door-shift: -40px;">
+                <rect x="18" y="12" width="86" height="146" rx="14"
+                      style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+                <rect x="90" y="70" width="5" height="34" rx="2.5" style="fill: var(--border-strong);" />
+              </g>
+              <g class="fridge-door fridge-door--right" style="--door-shift: 40px;">
+                <rect x="104" y="12" width="86" height="146" rx="14"
+                      style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+                <rect x="113" y="70" width="5" height="34" rx="2.5" style="fill: var(--border-strong);" />
+              </g>
+
+              <!-- Panel de inferencia: tres lineas que aparecen tras el escaneo -->
+              <rect x="206" y="34" width="84" height="102" rx="10"
+                    style="fill: var(--card); stroke: var(--border);" stroke-width="2" />
+              <circle class="fridge-item" style="--i: 8; fill: var(--accent);" cx="218" cy="48" r="4" />
+              <rect class="fridge-item" style="--i: 8; fill: var(--ink-muted);" x="228" y="45" width="40" height="5" rx="2.5" />
+              <rect class="fridge-item" style="--i: 9; fill: var(--accent-soft);" x="216" y="62" width="64" height="18" rx="9" />
+              <rect class="fridge-item" style="--i: 9; fill: var(--accent);" x="224" y="69" width="34" height="4" rx="2" />
+              <rect class="fridge-item" style="--i: 10; fill: var(--accent-soft);" x="216" y="86" width="64" height="18" rx="9" />
+              <rect class="fridge-item" style="--i: 10; fill: var(--accent);" x="224" y="93" width="44" height="4" rx="2" />
+              <rect class="fridge-item" style="--i: 11; fill: var(--accent-soft);" x="216" y="110" width="64" height="18" rx="9" />
+              <rect class="fridge-item" style="--i: 11; fill: var(--accent);" x="224" y="117" width="26" height="4" rx="2" />
+
+              <!-- Hoja que cae despacio: unico elemento puramente ambiental -->
+              <path class="fridge-leaf" style="fill: var(--accent-bright);"
+                    d="M192 16 C200 16 206 22 206 30 C198 30 192 24 192 16 Z" />
+            </svg>
+
             <!-- Escaneo visual simulado -->
             <div class="mockup-fridge-preview">
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -1746,35 +2364,69 @@
     </div>
   </section>
 
-  <!-- ==================== MAGIC UI: MARQUEE DE INGREDIENTES ==================== -->
-  <div class="marquee-container">
-    <div class="marquee-track">
-      <span class="marquee-chip">🥑 Palta Hass</span>
-      <span class="marquee-chip">🍅 Tomates Maduros</span>
-      <span class="marquee-chip">🥚 Huevos de Corral</span>
-      <span class="marquee-chip">🧅 Cebolla Roja</span>
-      <span class="marquee-chip">🧄 Dientes de Ajo</span>
-      <span class="marquee-chip">🧀 Queso Parmesano</span>
-      <span class="marquee-chip">🍄 Champiñones Frescos</span>
-      <span class="marquee-chip">🍋 Limón Sutil</span>
-      <span class="marquee-chip">🥦 Brócoli</span>
-      <span class="marquee-chip">🍗 Pechuga de Pollo</span>
-      <span class="marquee-chip">🌿 Albahaca Fresca</span>
-      <span class="marquee-chip">🥔 Papa Amarilla</span>
-      <!-- Loop sin interrupción -->
-      <span class="marquee-chip">🥑 Palta Hass</span>
-      <span class="marquee-chip">🍅 Tomates Maduros</span>
-      <span class="marquee-chip">🥚 Huevos de Corral</span>
-      <span class="marquee-chip">🧅 Cebolla Roja</span>
-      <span class="marquee-chip">🧄 Dientes de Ajo</span>
-      <span class="marquee-chip">🧀 Queso Parmesano</span>
-      <span class="marquee-chip">🍄 Champiñones Frescos</span>
-      <span class="marquee-chip">🍋 Limón Sutil</span>
-      <span class="marquee-chip">🥦 Brócoli</span>
-      <span class="marquee-chip">🍗 Pechuga de Pollo</span>
-      <span class="marquee-chip">🌿 Albahaca Fresca</span>
-      <span class="marquee-chip">🥔 Papa Amarilla</span>
+  <!-- ==================== BANDA DE ALIMENTOS RECONOCIDOS ==================== -->
+  <div class="pantry-strip">
+    <div class="container">
+      <p class="pantry-strip__label" data-scroll-reveal>Algunos de los alimentos que el modelo reconoce en una sola foto</p>
+      <ul class="pantry-strip__list">
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 1);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-tomato" width="40" height="40" /></svg>
+          <span>Tomate</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 2);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-egg" width="40" height="40" /></svg>
+          <span>Huevo</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 3);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-onion" width="40" height="40" /></svg>
+          <span>Cebolla</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 4);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-cheese" width="40" height="40" /></svg>
+          <span>Queso</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 5);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-broccoli" width="40" height="40" /></svg>
+          <span>Brocoli</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 6);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-pepper" width="40" height="40" /></svg>
+          <span>Pimiento</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 7);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-carrot" width="40" height="40" /></svg>
+          <span>Zanahoria</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 8);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-zucchini" width="40" height="40" /></svg>
+          <span>Calabacin</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 9);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-lemon" width="40" height="40" /></svg>
+          <span>Limon</span>
+        </li>
+        <li class="pantry-item" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 10);">
+          <svg class="pantry-item__art" viewBox="0 0 40 40" aria-hidden="true"><use href="#f-milk" width="40" height="40" /></svg>
+          <span>Leche</span>
+        </li>
+      </ul>
     </div>
+  </div>
+
+  <!--
+    Divisor de onda. El trazado contiene dos ciclos identicos, asi que
+    desplazarlo medio ancho lo deja exactamente donde empezo: el bucle no
+    tiene costura. Es decorativo, por eso aria-hidden.
+  -->
+  <div class="wave-divider" aria-hidden="true">
+    <svg viewBox="0 0 1440 72" preserveAspectRatio="none">
+      <path class="wave-back"
+            d="M0 30 C120 0 240 0 360 30 S600 60 720 30 C840 0 960 0 1080 30 S1320 60 1440 30 L1440 72 L0 72 Z" />
+      <path class="wave-front"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40 L1440 72 L0 72 Z" />
+      <path class="wave-line"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40" />
+    </svg>
   </div>
 
   <!-- ==================== 2. ¿CÓMO FUNCIONA? ==================== -->
@@ -1788,18 +2440,109 @@
 
       <div class="steps-grid">
         <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 1);">
+          <!-- Paso 1: el telefono dispara, el obturador late y la foto entra. -->
+          <svg class="scene scene-step" viewBox="0 0 240 118" role="img"
+               aria-label="Ilustracion: un telefono fotografia la refrigeradora.">
+            <rect x="26" y="14" width="62" height="90" rx="12"
+                  style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+            <rect x="34" y="26" width="46" height="60" rx="6" style="fill: var(--dark-surface);" />
+            <circle cx="57" cy="56" r="13" style="fill: none; stroke: var(--accent-bright);" stroke-width="2" />
+            <circle class="shutter-ring" cx="57" cy="56" r="13"
+                    style="fill: none; stroke: var(--accent-bright);" stroke-width="2" />
+            <rect class="shutter-flash" x="34" y="26" width="46" height="60" rx="6" style="fill: #FFFFFF;" />
+            <rect x="46" y="92" width="22" height="4" rx="2" style="fill: var(--border-strong);" />
+
+            <path d="M100 58 L132 58" style="stroke: var(--accent);" stroke-width="2" stroke-linecap="round" />
+            <path d="M126 52 L132 58 L126 64" style="fill: none; stroke: var(--accent);"
+                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+            <rect x="146" y="22" width="76" height="74" rx="10"
+                  style="fill: var(--card-subtle); stroke: var(--border-strong);" stroke-width="2" />
+            <use href="#f-tomato"   x="153" y="34" width="26" height="26" />
+            <use href="#f-egg"      x="175" y="34" width="24" height="26" />
+            <use href="#f-broccoli" x="194" y="34" width="26" height="26" />
+            <rect style="fill: var(--border-strong);" x="158" y="70" width="52" height="4" rx="2" />
+            <rect style="fill: var(--border-strong);" x="158" y="80" width="34" height="4" rx="2" />
+          </svg>
           <div class="step-number">01</div>
           <h3>Toma o sube una foto</h3>
           <p>Abre la cámara de tu celular o sube una foto de tu refri o alacena. No necesitas tipear los ingredientes a mano uno por uno.</p>
         </div>
 
         <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 2);">
+          <!-- Paso 2: la corriente recorre los enlaces y los nodos laten. -->
+          <svg class="scene scene-step" viewBox="0 0 240 118" role="img"
+               aria-label="Ilustracion: una red neuronal analiza la imagen y la clasifica.">
+            <rect x="18" y="34" width="52" height="50" rx="8"
+                  style="fill: var(--dark-surface);" />
+            <use href="#f-tomato"   x="25" y="40" width="22" height="22" />
+            <use href="#f-zucchini" x="44" y="40" width="22" height="22" />
+            <use href="#f-lemon"    x="25" y="58" width="22" height="22" />
+            <use href="#f-onion"    x="44" y="58" width="22" height="22" />
+
+            <g class="net-link" style="fill: none; stroke: var(--accent);" stroke-width="2" stroke-linecap="round">
+              <path d="M74 50 L116 34" />
+              <path d="M74 59 L116 59" />
+              <path d="M74 68 L116 84" />
+              <path d="M128 34 L170 59" />
+              <path d="M128 59 L170 59" />
+              <path d="M128 84 L170 59" />
+            </g>
+
+            <circle class="net-node" style="--i: 0; fill: var(--accent);" cx="122" cy="34" r="7" />
+            <circle class="net-node" style="--i: 1; fill: var(--accent);" cx="122" cy="59" r="7" />
+            <circle class="net-node" style="--i: 2; fill: var(--accent);" cx="122" cy="84" r="7" />
+
+            <rect x="176" y="40" width="50" height="38" rx="9"
+                  style="fill: var(--accent-soft); stroke: var(--accent);" stroke-width="2" />
+            <path d="M190 59 L197 66 L212 51" style="fill: none; stroke: var(--accent);"
+                  stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
           <div class="step-number">02</div>
           <h3>Inferencia Gemini 3.8</h3>
           <p>Google Gemini 3.8 Vision analiza la imagen de forma multimodal, reconociendo vegetales, lácteos y carnes con máxima fidelidad.</p>
         </div>
 
         <div class="step-card glare-card" data-scroll-reveal style="--reveal-delay: calc(var(--motion-stagger) * 3);">
+          <!-- Paso 3: las 3 fichas se reparten y el plato humea. -->
+          <svg class="scene scene-step" viewBox="0 0 240 118" role="img"
+               aria-label="Ilustracion: tres recetas se reparten junto a un plato caliente.">
+            <g class="deal-card" style="--i: 0;">
+              <rect x="16" y="26" width="46" height="66" rx="9"
+                    style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+              <rect x="24" y="36" width="30" height="18" rx="5" style="fill: var(--accent-soft);" />
+              <use href="#f-carrot" x="31" y="37" width="16" height="16" />
+              <rect x="24" y="62" width="30" height="4" rx="2" style="fill: var(--border-strong);" />
+              <rect x="24" y="72" width="20" height="4" rx="2" style="fill: var(--border-strong);" />
+            </g>
+            <g class="deal-card" style="--i: 1;">
+              <rect x="70" y="26" width="46" height="66" rx="9"
+                    style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+              <rect x="78" y="36" width="30" height="18" rx="5" style="fill: var(--accent-soft);" />
+              <use href="#f-pepper" x="85" y="37" width="16" height="16" />
+              <rect x="78" y="62" width="30" height="4" rx="2" style="fill: var(--border-strong);" />
+              <rect x="78" y="72" width="24" height="4" rx="2" style="fill: var(--border-strong);" />
+            </g>
+            <g class="deal-card" style="--i: 2;">
+              <rect x="124" y="26" width="46" height="66" rx="9"
+                    style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+              <rect x="132" y="36" width="30" height="18" rx="5" style="fill: var(--accent-soft);" />
+              <use href="#f-cheese" x="139" y="37" width="16" height="16" />
+              <rect x="132" y="62" width="30" height="4" rx="2" style="fill: var(--border-strong);" />
+              <rect x="132" y="72" width="16" height="4" rx="2" style="fill: var(--border-strong);" />
+            </g>
+
+            <!-- Plato con vapor: el unico bucle largo de esta escena -->
+            <path class="steam" d="M196 56 C190 48 202 44 196 36" style="fill: none; stroke: var(--ink-muted);"
+                  stroke-width="2" stroke-linecap="round" />
+            <path class="steam steam--b" d="M208 56 C202 48 214 44 208 36" style="fill: none; stroke: var(--ink-muted);"
+                  stroke-width="2" stroke-linecap="round" />
+            <path class="steam steam--c" d="M220 56 C214 48 226 44 220 36" style="fill: none; stroke: var(--ink-muted);"
+                  stroke-width="2" stroke-linecap="round" />
+            <ellipse cx="208" cy="68" rx="28" ry="9" style="fill: var(--accent-soft);" />
+            <path d="M180 68 A28 20 0 0 0 236 68 Z"
+                  style="fill: var(--card); stroke: var(--border-strong);" stroke-width="2" />
+          </svg>
           <div class="step-number">03</div>
           <h3>Cocina sin desperdiciar</h3>
           <p>Recibe 3 opciones culinarias con instrucciones paso a paso, tiempos exactos y tips para que ningún alimento termine en la basura.</p>
@@ -1809,6 +2552,18 @@
   </section>
 
   <!-- ==================== 3. MAGIC UI: BENTO GRID DE BENEFICIOS ==================== -->
+  <!-- Vuelve al fondo base, por eso --wave-fill cambia. -->
+  <div class="wave-divider" aria-hidden="true" style="--wave-fill: var(--bg);">
+    <svg viewBox="0 0 1440 72" preserveAspectRatio="none">
+      <path class="wave-back"
+            d="M0 30 C120 0 240 0 360 30 S600 60 720 30 C840 0 960 0 1080 30 S1320 60 1440 30 L1440 72 L0 72 Z" />
+      <path class="wave-front"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40 L1440 72 L0 72 Z" />
+      <path class="wave-line"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40" />
+    </svg>
+  </div>
+
   <section class="section" id="beneficios">
     <div class="container">
       <div class="section-header" data-scroll-reveal>
@@ -1905,6 +2660,17 @@
   </section>
 
   <!-- ==================== 4. CALCULADORA DE IMPACTO Y AHORRO REALISTA ==================== -->
+  <div class="wave-divider" aria-hidden="true">
+    <svg viewBox="0 0 1440 72" preserveAspectRatio="none">
+      <path class="wave-back"
+            d="M0 30 C120 0 240 0 360 30 S600 60 720 30 C840 0 960 0 1080 30 S1320 60 1440 30 L1440 72 L0 72 Z" />
+      <path class="wave-front"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40 L1440 72 L0 72 Z" />
+      <path class="wave-line"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40" />
+    </svg>
+  </div>
+
   <section class="section section-alt" id="calculadora">
     <div class="container">
       <div class="section-header" data-scroll-reveal>
@@ -1969,6 +2735,17 @@
   </section>
 
   <!-- ==================== 5. BANNER FINAL CTA ==================== -->
+  <div class="wave-divider" aria-hidden="true" style="--wave-fill: var(--bg);">
+    <svg viewBox="0 0 1440 72" preserveAspectRatio="none">
+      <path class="wave-back"
+            d="M0 30 C120 0 240 0 360 30 S600 60 720 30 C840 0 960 0 1080 30 S1320 60 1440 30 L1440 72 L0 72 Z" />
+      <path class="wave-front"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40 L1440 72 L0 72 Z" />
+      <path class="wave-line"
+            d="M0 40 C120 10 240 10 360 40 S600 70 720 40 C840 10 960 10 1080 40 S1320 70 1440 40" />
+    </svg>
+  </div>
+
   <section class="cta-banner-section">
     <div class="container">
       <div class="cta-banner-card border-beam-card" data-scroll-reveal>
@@ -1985,9 +2762,24 @@
   <!-- ==================== FOOTER ==================== -->
   <footer class="footer">
     <div class="container footer-inner">
-      <div>
-        <strong style="color: var(--ink); font-family: var(--display); font-size: 1.05rem;">SmartChef AI 3.8</strong>
-        <span> · Desarrollado por Odar Alcocer (UPC)</span>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <!-- Olla con vapor: bucle ambiental de 5,5s, decorativo. -->
+        <svg class="footer-pot" viewBox="0 0 54 46" role="img" aria-hidden="true" focusable="false">
+          <path class="steam" d="M20 20 C14 12 26 8 20 0" style="fill: none; stroke: var(--accent);"
+                stroke-width="2" stroke-linecap="round" />
+          <path class="steam steam--b" d="M30 20 C24 12 36 8 30 0" style="fill: none; stroke: var(--accent);"
+                stroke-width="2" stroke-linecap="round" />
+          <path class="steam steam--c" d="M40 20 C34 12 46 8 40 0" style="fill: none; stroke: var(--accent);"
+                stroke-width="2" stroke-linecap="round" />
+          <rect x="6" y="24" width="42" height="6" rx="3" style="fill: var(--accent);" />
+          <path d="M9 30 L13 44 L41 44 L45 30 Z" style="fill: none; stroke: var(--accent);"
+                stroke-width="2" stroke-linejoin="round" />
+        </svg>
+
+        <div>
+          <strong style="color: var(--ink); font-family: var(--display); font-size: 1.05rem;">SmartChef AI 3.8</strong>
+          <span> · Desarrollado por Odar Alcocer (UPC)</span>
+        </div>
       </div>
 
       <div class="footer-links">

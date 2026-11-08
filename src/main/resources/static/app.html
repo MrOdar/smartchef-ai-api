@@ -12,6 +12,105 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127859;</text></svg>">
 </head>
 <body>
+  <!--
+    Alimentos dibujados a mano, una sola vez, para reusarlos con <use> en
+    todas las escenas. Los colores son literales a proposito: un tomate es
+    rojo en tema claro y en tema oscuro, no sigue el acento de la marca.
+    No se sirve como archivo aparte porque Chrome no resuelve <use> hacia
+    otro documento SVG; va embebido en cada pagina.
+  -->
+  <svg class="food-sprite" aria-hidden="true" focusable="false" width="0" height="0">
+    <defs>
+      <symbol id="f-tomato" viewBox="0 0 40 40">
+        <circle cx="20" cy="24" r="14" fill="#E0533F" />
+        <path d="M20 10 A14 14 0 0 1 20 38 A10 14 0 0 0 20 10 Z" fill="#C23B2B" opacity=".45" />
+        <ellipse cx="14" cy="18" rx="4" ry="3" fill="#FFFFFF" opacity=".35" />
+        <path d="M20 16 L12 8 L16 14 L8 13 L15 18 L20 15 L25 18 L32 13 L24 14 L28 8 Z" fill="#3E8E4A" />
+        <rect x="19" y="3" width="2.4" height="6" rx="1.2" fill="#2F6F3A" />
+      </symbol>
+
+      <symbol id="f-egg" viewBox="0 0 40 40">
+        <path d="M20 37 C12 37 8 31 8 25 C8 15 14 4 20 4 C26 4 32 15 32 25 C32 31 28 37 20 37 Z" fill="#F6EEDC" />
+        <path d="M26 12 C30 17 32 22 32 25 C32 31 28 37 20 37 C25 33 28 25 26 12 Z" fill="#E4D6B8" opacity=".7" />
+        <ellipse cx="15" cy="16" rx="3" ry="4.5" fill="#FFFFFF" opacity=".75" />
+      </symbol>
+
+      <symbol id="f-onion" viewBox="0 0 40 40">
+        <path d="M20 37 C11 37 5 31 5 24 C5 16 12 10 20 10 C28 10 35 16 35 24 C35 31 29 37 20 37 Z" fill="#B9739F" />
+        <g fill="none" stroke="#8E4C79" stroke-width="1.4" stroke-linecap="round">
+          <path d="M20 11 C15 19 15 29 20 36" />
+          <path d="M20 11 C25 19 25 29 20 36" />
+          <path d="M12 14 C9 20 9 28 13 33" />
+          <path d="M28 14 C31 20 31 28 27 33" />
+        </g>
+        <g fill="none" stroke="#4F9A52" stroke-width="2" stroke-linecap="round">
+          <path d="M20 11 C19 6 17 3 14 1" />
+          <path d="M20 11 C21 6 23 3 26 2" />
+        </g>
+      </symbol>
+
+      <symbol id="f-cheese" viewBox="0 0 40 40">
+        <path d="M3 30 L37 13 L37 29 L3 30 Z" fill="#E8B830" />
+        <path d="M3 30 L37 13 L33 9 L3 25 Z" fill="#F7DC82" />
+        <circle cx="12" cy="27" r="2.6" fill="#D29F1F" />
+        <circle cx="22" cy="25" r="2" fill="#D29F1F" />
+        <circle cx="30" cy="22" r="2.4" fill="#D29F1F" />
+      </symbol>
+
+      <symbol id="f-broccoli" viewBox="0 0 40 40">
+        <path d="M17 38 L23 38 L22 23 L18 23 Z" fill="#A7C98F" />
+        <circle cx="13" cy="19" r="7" fill="#3E8E4A" />
+        <circle cx="27" cy="19" r="7" fill="#3E8E4A" />
+        <circle cx="20" cy="13" r="8" fill="#4FA85C" />
+        <circle cx="16" cy="24" r="6" fill="#4FA85C" />
+        <circle cx="25" cy="24" r="6" fill="#3E8E4A" />
+      </symbol>
+
+      <symbol id="f-carrot" viewBox="0 0 40 40">
+        <path d="M20 38 L12 16 C15 12 25 12 28 16 Z" fill="#E8822A" />
+        <g fill="none" stroke="#C4661A" stroke-width="1.3" stroke-linecap="round">
+          <path d="M15 20 L19 21" />
+          <path d="M17 26 L21 27" />
+          <path d="M18 32 L21 32" />
+        </g>
+        <g fill="none" stroke="#4F9A52" stroke-width="2.2" stroke-linecap="round">
+          <path d="M20 14 C19 8 16 4 12 2" />
+          <path d="M20 14 C20 8 20 5 20 1" />
+          <path d="M20 14 C21 8 24 4 28 2" />
+        </g>
+      </symbol>
+
+      <symbol id="f-lemon" viewBox="0 0 40 40">
+        <ellipse cx="20" cy="22" rx="14" ry="11" fill="#F2D22E" />
+        <circle cx="5" cy="22" r="2.6" fill="#DFBB1F" />
+        <circle cx="35" cy="22" r="2.6" fill="#DFBB1F" />
+        <ellipse cx="14" cy="17" rx="5" ry="3" fill="#FFFFFF" opacity=".35" />
+      </symbol>
+
+      <symbol id="f-pepper" viewBox="0 0 40 40">
+        <path d="M10 21 C10 15 14 11 20 11 C26 11 30 15 30 21 C30 30 26 37 20 37 C14 37 10 30 10 21 Z" fill="#D93D33" />
+        <path d="M20 11 C23 16 23 31 20 37 C26 37 30 30 30 21 C30 15 26 11 20 11 Z" fill="#BE2E26" opacity=".55" />
+        <ellipse cx="15" cy="18" rx="2.6" ry="4" fill="#FFFFFF" opacity=".3" />
+        <ellipse cx="20" cy="11" rx="6.5" ry="2.6" fill="#4F9A52" />
+        <rect x="18.7" y="3" width="2.6" height="8" rx="1.3" fill="#3E8E4A" />
+      </symbol>
+
+      <symbol id="f-milk" viewBox="0 0 40 40">
+        <path d="M11 38 L29 38 L29 15 L20 5 L11 15 Z" fill="#FFFFFF" stroke="#D3DAD4" stroke-width="1.4" />
+        <path d="M11 15 L20 5 L29 15 Z" fill="#E4F0E8" />
+        <rect x="14" y="21" width="12" height="10" rx="2.5" fill="#1E8E4D" />
+        <path d="M17 26 L19 28 L23 24" fill="none" stroke="#FFFFFF" stroke-width="1.8"
+              stroke-linecap="round" stroke-linejoin="round" />
+      </symbol>
+
+      <symbol id="f-zucchini" viewBox="0 0 40 40">
+        <path d="M6 33 C6 21 15 11 27 9 C31 13 31 19 27 23 C19 30 13 35 6 33 Z" fill="#2F7D46" />
+        <path d="M12 27 C16 20 21 15 27 12" fill="none" stroke="#4FA85C" stroke-width="2" stroke-linecap="round" />
+        <rect x="27" y="4" width="3" height="7" rx="1.5" fill="#6B8F55" transform="rotate(28 28.5 7.5)" />
+      </symbol>
+    </defs>
+  </svg>
+
 <header class="topbar">
     <div class="topbar__inner">
         <a class="brand" href="/" title="Volver al inicio">
@@ -50,6 +149,13 @@
     <!-- ============ VISTA: ESCANEAR ============ -->
     <section class="view is-active" id="view-scan">
         <div class="hero">
+            <!-- Fondo ambiental. Decorativo: no aporta informacion. -->
+            <div class="ambient" aria-hidden="true">
+                <span class="ambient__blob ambient__blob--a"></span>
+                <span class="ambient__blob ambient__blob--b"></span>
+                <span class="ambient__blob ambient__blob--c"></span>
+            </div>
+
             <div class="hero__inner">
 
                 <div class="hero__copy">
@@ -120,10 +226,75 @@
                             <span class="panel-ai__tag">ejemplo</span>
                         </header>
 
-                        <figure class="shot">
-                            <img class="shot__img" src="assets/demo-fridge.jpg" alt=""
-                                 loading="lazy" width="1200" height="900">
-                        </figure>
+                        <!--
+                          La misma escena que el landing: las puertas se abren,
+                          los alimentos entran uno a uno y el haz recorre el
+                          interior. Sustituye a la foto estatica para que el
+                          panel se vea vivo desde el primer segundo.
+                        -->
+                        <svg class="scene scene-fridge" viewBox="0 0 300 170" role="img"
+                             aria-label="Ilustracion: una refrigeradora se abre y Gemini reconoce los alimentos de su interior.">
+                          <defs>
+                            <linearGradient id="beamGradApp" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%"   style="stop-color: var(--green); stop-opacity: 0" />
+                              <stop offset="50%"  style="stop-color: var(--green); stop-opacity: .9" />
+                              <stop offset="100%" style="stop-color: var(--green); stop-opacity: 0" />
+                            </linearGradient>
+                            <clipPath id="fridgeInnerApp">
+                              <rect x="28" y="22" width="152" height="126" rx="10" />
+                            </clipPath>
+                          </defs>
+
+                          <rect x="18" y="12" width="172" height="146" rx="14"
+                                style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                          <rect x="28" y="22" width="152" height="126" rx="10"
+                                style="fill: var(--cream);" />
+                          <rect class="fridge-chill" x="28" y="22" width="152" height="126" rx="10"
+                                style="fill: var(--green);" />
+
+                          <g clip-path="url(#fridgeInnerApp)">
+                            <line x1="30" y1="70" x2="178" y2="70" style="stroke: var(--line);" stroke-width="2" />
+                            <line x1="30" y1="114" x2="178" y2="114" style="stroke: var(--line);" stroke-width="2" />
+
+                            <use class="fridge-item" style="--i: 0;" href="#f-tomato"   x="38"  y="42" width="28" height="28" />
+                            <use class="fridge-item" style="--i: 1;" href="#f-egg"      x="68"  y="42" width="26" height="28" />
+                            <use class="fridge-item" style="--i: 2;" href="#f-onion"    x="96"  y="42" width="28" height="28" />
+                            <use class="fridge-item" style="--i: 3;" href="#f-cheese"   x="126" y="42" width="30" height="28" />
+                            <use class="fridge-item" style="--i: 4;" href="#f-broccoli" x="36"  y="86" width="28" height="28" />
+                            <use class="fridge-item" style="--i: 5;" href="#f-pepper"   x="66"  y="86" width="28" height="28" />
+                            <use class="fridge-item" style="--i: 6;" href="#f-lemon"    x="96"  y="86" width="28" height="28" />
+                            <use class="fridge-item" style="--i: 7;" href="#f-milk"     x="128" y="86" width="26" height="28" />
+
+                            <rect class="fridge-box" x="40" y="44" width="56" height="28" rx="6"
+                                  style="fill: none; stroke: var(--green);" stroke-width="2" />
+                            <rect class="fridge-beam" x="26" y="22" width="14" height="126" fill="url(#beamGradApp)" />
+                          </g>
+
+                          <g class="fridge-door" style="--door-shift: -40px;">
+                            <rect x="18" y="12" width="86" height="146" rx="14"
+                                  style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                            <rect x="90" y="70" width="5" height="34" rx="2.5" style="fill: var(--line);" />
+                          </g>
+                          <g class="fridge-door" style="--door-shift: 40px;">
+                            <rect x="104" y="12" width="86" height="146" rx="14"
+                                  style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                            <rect x="113" y="70" width="5" height="34" rx="2.5" style="fill: var(--line);" />
+                          </g>
+
+                          <rect x="206" y="34" width="84" height="102" rx="10"
+                                style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                          <circle class="fridge-item" style="--i: 8; fill: var(--green);" cx="218" cy="48" r="4" />
+                          <rect class="fridge-item" style="--i: 8; fill: var(--ink-faint);" x="228" y="45" width="40" height="5" rx="2.5" />
+                          <rect class="fridge-item" style="--i: 9; fill: var(--green-soft);" x="216" y="62" width="64" height="18" rx="9" />
+                          <rect class="fridge-item" style="--i: 9; fill: var(--green);" x="224" y="69" width="34" height="4" rx="2" />
+                          <rect class="fridge-item" style="--i: 10; fill: var(--green-soft);" x="216" y="86" width="64" height="18" rx="9" />
+                          <rect class="fridge-item" style="--i: 10; fill: var(--green);" x="224" y="93" width="44" height="4" rx="2" />
+                          <rect class="fridge-item" style="--i: 11; fill: var(--green-soft);" x="216" y="110" width="64" height="18" rx="9" />
+                          <rect class="fridge-item" style="--i: 11; fill: var(--green);" x="224" y="117" width="26" height="4" rx="2" />
+
+                          <path class="fridge-leaf" style="fill: var(--green);"
+                                d="M192 16 C200 16 206 22 206 30 C198 30 192 24 192 16 Z" />
+                        </svg>
 
                         <section class="panel-ai__block">
                             <p class="panel-ai__label">
@@ -160,6 +331,61 @@
             </div>
         </div>
 
+        <!--
+          Franja de pasos. Explica que va a pasar antes de pedir la foto:
+          sin ella el usuario aterriza en una caja vacia sin contexto.
+        -->
+        <ol class="steps-strip">
+            <li class="steps-strip__item">
+                <svg class="steps-strip__art" viewBox="0 0 48 48" aria-hidden="true">
+                    <rect x="8" y="14" width="32" height="24" rx="5"
+                          style="fill: none; stroke: var(--green);" stroke-width="2.4" />
+                    <path d="M18 14 L20 9 L28 9 L30 14" style="fill: none; stroke: var(--green);"
+                          stroke-width="2.4" stroke-linejoin="round" />
+                    <circle class="shutter-ring" cx="24" cy="26" r="7"
+                            style="fill: none; stroke: var(--green);" stroke-width="2.4" />
+                </svg>
+                <div>
+                    <p class="steps-strip__title"><b>1.</b> Sube una foto</p>
+                    <p class="steps-strip__text">De tu refrigeradora o tu despensa. JPEG, PNG o WEBP.</p>
+                </div>
+            </li>
+            <li class="steps-strip__item">
+                <svg class="steps-strip__art" viewBox="0 0 48 48" aria-hidden="true">
+                    <g class="net-link" style="fill: none; stroke: var(--green);"
+                       stroke-width="2.2" stroke-linecap="round">
+                        <path d="M14 16 L30 24" />
+                        <path d="M14 24 L30 24" />
+                        <path d="M14 32 L30 24" />
+                    </g>
+                    <circle class="net-node" style="--i: 0; fill: var(--green);" cx="13" cy="16" r="3.4" />
+                    <circle class="net-node" style="--i: 1; fill: var(--green);" cx="13" cy="24" r="3.4" />
+                    <circle class="net-node" style="--i: 2; fill: var(--green);" cx="13" cy="32" r="3.4" />
+                    <circle style="fill: none; stroke: var(--green);" stroke-width="2.4" cx="34" cy="24" r="6" />
+                </svg>
+                <div>
+                    <p class="steps-strip__title"><b>2.</b> Gemini la analiza</p>
+                    <p class="steps-strip__text">Reconoce cada alimento de la imagen en unos dos segundos.</p>
+                </div>
+            </li>
+            <li class="steps-strip__item">
+                <svg class="steps-strip__art" viewBox="0 0 48 48" aria-hidden="true">
+                    <path class="steam" d="M20 20 C16 15 24 12 20 7" style="fill: none; stroke: var(--green);"
+                          stroke-width="2.2" stroke-linecap="round" />
+                    <path class="steam steam--b" d="M28 20 C24 15 32 12 28 7" style="fill: none; stroke: var(--green);"
+                          stroke-width="2.2" stroke-linecap="round" />
+                    <path d="M9 26 A15 12 0 0 0 39 26 Z" style="fill: none; stroke: var(--green);"
+                          stroke-width="2.4" stroke-linejoin="round" />
+                    <line x1="6" y1="26" x2="42" y2="26" style="stroke: var(--green);"
+                          stroke-width="2.4" stroke-linecap="round" />
+                </svg>
+                <div>
+                    <p class="steps-strip__title"><b>3.</b> Recibes 3 recetas</p>
+                    <p class="steps-strip__text">Con pasos, tiempos, calorias y el consejo del chef.</p>
+                </div>
+            </li>
+        </ol>
+
         <div class="dropzone" id="dropzone" tabindex="0" role="button"
              aria-label="Arrastra una foto o pulsa para seleccionar un archivo">
             <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" hidden>
@@ -191,20 +417,75 @@
             <button class="btn btn--ghost" id="btn-reset" type="button" hidden>Cambiar foto</button>
         </div>
 
-        <!-- Indicador de procesamiento -->
+        <!--
+          Indicador de procesamiento. En lugar de un circulo girando se
+          dibujan tres tarjetas fantasma con la forma del resultado: la
+          espera se lee mas corta y al llegar los datos no salta el layout.
+        -->
         <div class="loader is-hidden" id="loader" role="status" aria-live="polite">
-            <div class="loader__spinner" aria-hidden="true"></div>
             <p class="loader__text">Analizando ingredientes con Gemini AI...</p>
             <p class="loader__sub" id="loader-sub">Detectando alimentos y creando tus recetas</p>
+
+            <div class="skeletons" aria-hidden="true">
+                <div class="skeleton-card">
+                    <span class="skeleton skeleton--title"></span>
+                    <span class="skeleton skeleton--line"></span>
+                    <span class="skeleton skeleton--line skeleton--short"></span>
+                    <span class="skeleton skeleton--chips"></span>
+                </div>
+                <div class="skeleton-card">
+                    <span class="skeleton skeleton--title"></span>
+                    <span class="skeleton skeleton--line"></span>
+                    <span class="skeleton skeleton--line skeleton--short"></span>
+                    <span class="skeleton skeleton--chips"></span>
+                </div>
+                <div class="skeleton-card">
+                    <span class="skeleton skeleton--title"></span>
+                    <span class="skeleton skeleton--line"></span>
+                    <span class="skeleton skeleton--line skeleton--short"></span>
+                    <span class="skeleton skeleton--chips"></span>
+                </div>
+            </div>
         </div>
 
         <div class="alert is-hidden" id="alert" role="alert"></div>
 
         <!-- Resultados -->
         <section class="results is-hidden" id="results">
+            <!--
+              Aviso de ejemplo. Al abrir la pagina se carga la sesion demo
+              sembrada para que no se vea vacia; sin este aviso el usuario
+              creeria que son resultados de una foto suya.
+            -->
+            <p class="results__demo is-hidden" id="results-demo">
+                <strong>Ejemplo precalculado.</strong>
+                Esto es lo que devuelve una foto de refrigeradora. Sube la tuya y se reemplaza.
+            </p>
+
             <div class="panel">
                 <h2 class="panel__title">Ingredientes detectados</h2>
+                <p class="panel__hint">Pulsa uno para descartarlo y rehacer las recetas sin el.</p>
                 <ul class="pills" id="detected-list"></ul>
+
+                <!--
+                  Solo aparece cuando hay algo descartado. Rehacer es una
+                  consulta nueva a Gemini, asi que es un boton explicito y el
+                  texto dice que cuesta: no se dispara al pulsar una pildora.
+                -->
+                <div class="excluded-bar is-hidden" id="excluded-bar">
+                    <div class="excluded-bar__text">
+                        <strong id="excluded-count"></strong>
+                        <span id="excluded-hint"></span>
+                    </div>
+                    <div class="excluded-bar__actions">
+                        <button class="btn btn--ghost" type="button" id="btn-restore-ingredients">
+                            Restaurar
+                        </button>
+                        <button class="btn btn--primary" type="button" id="btn-regenerate">
+                            Rehacer recetas
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <h2 class="section-title">Tus 3 recetas sugeridas</h2>
@@ -218,7 +499,19 @@
         <p class="view__subtitle">Las recetas que guardaste para cocinar mas tarde.</p>
         <div class="cards" id="favorite-cards"></div>
         <div class="empty is-hidden" id="favorites-empty">
-            <p>Todavia no has guardado ninguna receta.</p>
+            <svg class="empty__art" viewBox="0 0 120 80" aria-hidden="true">
+                <rect x="34" y="10" width="52" height="60" rx="8"
+                      style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                <path d="M60 28 C64 22 73 24 73 32 C73 39 64 45 60 48 C56 45 47 39 47 32 C47 24 56 22 60 28 Z"
+                      style="fill: none; stroke: var(--amber);" stroke-width="2.4" stroke-linejoin="round" />
+                <line x1="44" y1="58" x2="76" y2="58" style="stroke: var(--line);"
+                      stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <p class="empty__title" id="favorites-empty-title">Sin favoritos todavia</p>
+            <p class="empty__text" id="favorites-empty-text">
+                Las recetas que marques con la estrella apareceran aqui.
+            </p>
+            <button class="btn btn--soft" type="button" id="favorites-empty-action">Escanear una foto</button>
         </div>
     </section>
 
@@ -228,15 +521,45 @@
         <p class="view__subtitle">Cada foto que analizaste con su resultado completo.</p>
         <div id="history-list"></div>
         <div class="empty is-hidden" id="history-empty">
-            <p>Aun no tienes escaneos guardados en tu cuenta.</p>
+            <svg class="empty__art" viewBox="0 0 120 80" aria-hidden="true">
+                <rect x="22" y="16" width="76" height="14" rx="7"
+                      style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                <rect x="22" y="36" width="76" height="14" rx="7"
+                      style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                <rect x="22" y="56" width="76" height="14" rx="7"
+                      style="fill: var(--bg-elev); stroke: var(--line);" stroke-width="2" />
+                <circle cx="34" cy="23" r="3.4" style="fill: var(--green);" />
+                <circle cx="34" cy="43" r="3.4" style="fill: var(--line);" />
+                <circle cx="34" cy="63" r="3.4" style="fill: var(--line);" />
+            </svg>
+            <p class="empty__title" id="history-empty-title">Sin escaneos todavia</p>
+            <p class="empty__text" id="history-empty-text">
+                Cada foto que analices quedara guardada aqui con su resultado completo.
+            </p>
+            <button class="btn btn--soft" type="button" id="history-empty-action">Escanear una foto</button>
         </div>
     </section>
 </main>
 
 <footer class="footer">
-    <p>
-        SmartChef AI &middot; Spring Boot 3.3.4 &middot; Java 21 &middot; Google Gemini 3.8 Flash
-        &middot; <a href="/swagger-ui.html" target="_blank" rel="noopener">Documentacion OpenAPI</a>
+    <div class="footer__inner">
+        <div class="footer__brand">
+            <span class="footer__mark" aria-hidden="true">&#127859;</span>
+            <div>
+                <p class="footer__name">SmartChef AI 3.8</p>
+                <p class="footer__by">Desarrollado por Odar Alcocer (UPC)</p>
+            </div>
+        </div>
+
+        <nav class="footer__links" aria-label="Enlaces del pie">
+            <a href="/">Inicio</a>
+            <a href="/swagger-ui.html" target="_blank" rel="noopener">Documentacion OpenAPI</a>
+            <a href="https://github.com/lappwv" target="_blank" rel="noopener">GitHub</a>
+        </nav>
+    </div>
+
+    <p class="footer__stack">
+        Spring Boot 3.3.4 &middot; Java 21 &middot; PostgreSQL &middot; Google Gemini 3.8 Flash Vision
     </p>
 </footer>
 

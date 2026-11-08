@@ -99,6 +99,46 @@ public class RecipeService {
     }
 
     /**
+     * Rehace las recetas a partir de una lista de ingredientes, sin imagen.
+     * Es lo que ocurre cuando el usuario descarta ingredientes de un escaneo:
+     * la foto no se guarda, asi que no hay nada que reanalizar.
+     *
+     * <p>Cada llamada consume cuota de Gemini igual que una foto nueva, por
+     * eso en el frontend es un boton explicito y no se dispara al marcar.</p>
+     */
+    @Transactional
+    public ScanResultResponse generateFromIngredients(List<String> ingredients, Long userId) {
+        GeminiRecipeResult result = geminiVisionService.generateFromIngredients(ingredients);
+
+        if (result.recipes().isEmpty()) {
+            throw new GeminiServiceException(
+                    "No se pudo crear ninguna receta con esos ingredientes. Prueba a dejar alguno mas.");
+        }
+
+        List<String> detectedIngredients = normalizeDetected(result);
+
+        ScanSession session = new ScanSession();
+        session.setUser(userId == null ? null : userRepository.findById(userId).orElse(null));
+        session.setDetectedIngredientsSummary(String.join(", ", detectedIngredients));
+
+        for (GeminiRecipeResult.GeneratedRecipe generated : result.recipes()) {
+            session.addRecipe(toRecipeEntity(generated));
+        }
+
+        ScanSession saved = scanSessionRepository.save(session);
+        log.info("Sesion {} creada desde {} ingredientes indicados por el usuario",
+                saved.getId(), detectedIngredients.size());
+
+        Set<Long> favoriteIds = favoriteIdsFor(userId);
+
+        return new ScanResultResponse(
+                saved.getId(),
+                detectedIngredients,
+                saved.getRecipes().stream().map(r -> toResponse(r, favoriteIds)).toList(),
+                saved.getCreatedAt());
+    }
+
+    /**
      * Persiste el resultado precalculado de la demo como una sesion real sin
      * usuario. Lo usa {@link DemoDataSeeder} al arrancar; no invoca a Gemini.
      */

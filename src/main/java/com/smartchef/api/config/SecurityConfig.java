@@ -63,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         // El escaneo y la demo funcionan sin login (user_id nullable)
                         .requestMatchers("/api/v1/recipes/generate-from-image",
+                                "/api/v1/recipes/from-ingredients",
                                 "/api/v1/recipes/demo").permitAll()
                         // El diagnostico consulta la API de Google y revela
                         // configuracion: solo para administradores.

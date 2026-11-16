@@ -15,7 +15,7 @@
      * de nada en un telefono (resolveria su propio localhost). Solo en ese caso
      * se recurre a la direccion publica de produccion.
      */
-    var PRODUCTION_URL = 'https://smartchef-ai-api.onrender.com/';
+    var PRODUCTION_URL = 'https://smartchef-ai-api-pxoe.onrender.com/';
 
     /** Mensajes rotativos mientras la IA analiza, para amenizar la espera. */
     var LOADER_MESSAGES = [

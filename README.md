@@ -1,7 +1,7 @@
 # 🍳 SmartChef AI API
 
-[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Render-brightgreen?style=for-the-badge&logo=render)](https://smartchef-ai-api.onrender.com/)
-[![Swagger UI](https://img.shields.io/badge/API_Docs-Swagger_UI-blue?style=for-the-badge&logo=swagger)](https://smartchef-ai-api.onrender.com/swagger-ui.html)
+[![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Render-brightgreen?style=for-the-badge&logo=render)](https://smartchef-ai-api-pxoe.onrender.com/)
+[![Swagger UI](https://img.shields.io/badge/API_Docs-Swagger_UI-blue?style=for-the-badge&logo=swagger)](https://smartchef-ai-api-pxoe.onrender.com/swagger-ui.html)
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Security-Spring_Security_6_JWT-red?style=for-the-badge&logo=springsecurity)](https://spring.io/projects/spring-security)
@@ -16,10 +16,10 @@
 
 | Recurso | Enlace Directo | Descripción |
 |---|---|---|
-| 🌐 **Aplicación Web (SPA)** | [smartchef-ai-api.onrender.com](https://smartchef-ai-api.onrender.com/) | Interfaz responsiva con Landing Hero, carga drag-and-drop, sesión demo instantánea y modal QR |
-| 📖 **Documentación Swagger UI** | [smartchef-ai-api.onrender.com/swagger-ui.html](https://smartchef-ai-api.onrender.com/swagger-ui.html) | OpenAPI 3.0 interactivo con autorización Bearer JWT integrada |
-| 📊 **Especificación OpenAPI** | [smartchef-ai-api.onrender.com/v3/api-docs](https://smartchef-ai-api.onrender.com/v3/api-docs) | Esquema JSON estandarizado para Postman e Insomnia |
-| 🩺 **Health Check** | [smartchef-ai-api.onrender.com/actuator/health](https://smartchef-ai-api.onrender.com/actuator/health) | Monitoreo de liveness y estado de conexión a la base de datos |
+| 🌐 **Aplicación Web (SPA)** | [smartchef-ai-api-pxoe.onrender.com](https://smartchef-ai-api-pxoe.onrender.com/) | Interfaz responsiva con Landing Hero, carga drag-and-drop, sesión demo instantánea y modal QR |
+| 📖 **Documentación Swagger UI** | [smartchef-ai-api-pxoe.onrender.com/swagger-ui.html](https://smartchef-ai-api-pxoe.onrender.com/swagger-ui.html) | OpenAPI 3.0 interactivo con autorización Bearer JWT integrada |
+| 📊 **Especificación OpenAPI** | [smartchef-ai-api-pxoe.onrender.com/v3/api-docs](https://smartchef-ai-api-pxoe.onrender.com/v3/api-docs) | Esquema JSON estandarizado para Postman e Insomnia |
+| 🩺 **Health Check** | [smartchef-ai-api-pxoe.onrender.com/actuator/health](https://smartchef-ai-api-pxoe.onrender.com/actuator/health) | Monitoreo de liveness y estado de conexión a la base de datos |
 
 ---
 

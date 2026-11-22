@@ -239,7 +239,9 @@ public class GeminiVisionService {
 
         for (int i = 0; i < candidateModels.size(); i++) {
             String targetModel = candidateModels.get(i);
-            String url = "%s/models/%s:generateContent?key=%s".formatted(base, targetModel, properties.apiKey());
+            // La key viaja solo en la cabecera x-goog-api-key: en la URL acabaria dentro
+            // de los mensajes de excepcion de RestTemplate, en los logs y en la respuesta.
+            String url = "%s/models/%s:generateContent".formatted(base, targetModel);
             try {
                 log.info("Invocando Gemini AI ({}) con modelo: {}", base, targetModel);
                 rawResponse = restTemplate.postForObject(url, entity, String.class);
@@ -265,11 +267,12 @@ public class GeminiVisionService {
                 lastException = e;
                 if (isNotFoundOrUnsupported(e) && i < candidateModels.size() - 1) {
                     log.warn("Fallo de llamada con modelo '{}': {}. Probando modelo alternativo...",
-                            targetModel, e.getMessage());
+                            targetModel, e.getClass().getSimpleName());
                     continue;
                 }
                 throw new GeminiServiceException(
-                        "No se pudo contactar al servicio de IA de Gemini: " + e.getMessage(), e);
+                        "No se pudo contactar al servicio de IA de Gemini (%s)".formatted(
+                                e.getClass().getSimpleName()), e);
             }
         }
 
@@ -277,7 +280,7 @@ public class GeminiVisionService {
             if (lastException != null) {
                 String detail = (lastException instanceof HttpStatusCodeException httpEx)
                         ? extractGoogleErrorMessage(httpEx.getResponseBodyAsString())
-                        : lastException.getMessage();
+                        : lastException.getClass().getSimpleName();
                 throw new GeminiServiceException(
                         "No se pudo contactar al servicio de IA de Gemini: " + detail, lastException);
             }
@@ -342,7 +345,7 @@ public class GeminiVisionService {
         String workingBase = null;
 
         for (String base : baseUrls) {
-            String listUrl = "%s/models?key=%s".formatted(base, properties.apiKey());
+            String listUrl = "%s/models".formatted(base);
             try {
                 ResponseEntity<String> resp = restTemplate.exchange(listUrl, HttpMethod.GET, req, String.class);
                 if (resp.getBody() != null && !resp.getBody().isBlank()) {
@@ -392,7 +395,7 @@ public class GeminiVisionService {
                 if (logOut != null) {
                     logOut.append(base).append(" -> sin respuesta utilizable\n");
                 }
-                log.warn("Error al contactar {}: {}", base, e.getMessage());
+                log.warn("Error al contactar {}: {}", base, e.getClass().getSimpleName());
             }
         }
 
@@ -580,7 +583,7 @@ public class GeminiVisionService {
     private String buildIngredientsRequestBody(List<String> ingredients) {
         List<String> clean = sanitizeIngredients(ingredients);
         if (clean.isEmpty()) {
-            throw new GeminiServiceException("No hay ingredientes con los que cocinar.");
+            throw GeminiServiceException.userFacing("No hay ingredientes con los que cocinar.");
         }
 
         ArrayNode list = objectMapper.createArrayNode();

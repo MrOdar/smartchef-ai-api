@@ -1,10 +1,12 @@
 package com.smartchef.api.exception;
 
 import com.smartchef.api.dto.ApiErrorResponse;
+import com.smartchef.api.ratelimit.TooManyRequestsException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -109,13 +111,29 @@ public class GlobalExceptionHandler {
                 "Usuario o contrasena incorrectos"));
     }
 
+    /**
+     * El detalle del fallo (modelo, respuesta de Google, configuracion) queda en
+     * el log: puede describir la cuenta o la configuracion del servidor, y el
+     * endpoint es publico.
+     */
     @ExceptionHandler(GeminiServiceException.class)
     public ResponseEntity<ApiErrorResponse> handleGemini(GeminiServiceException ex) {
         log.error("Fallo al invocar Gemini: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiErrorResponse.of(
                 HttpStatus.SERVICE_UNAVAILABLE.value(),
                 "AI_SERVICE_ERROR",
-                ex.getMessage()));
+                ex.isUserFacing() ? ex.getMessage()
+                        : "El servicio de IA no esta disponible en este momento. Intentalo de nuevo en unos minutos."));
+    }
+
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyRequests(TooManyRequestsException ex) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds()))
+                .body(ApiErrorResponse.of(
+                        HttpStatus.TOO_MANY_REQUESTS.value(),
+                        "TOO_MANY_REQUESTS",
+                        ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

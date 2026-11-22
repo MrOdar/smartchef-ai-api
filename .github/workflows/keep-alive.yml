@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Ping SmartChef Health Endpoint
         run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://smartchef-ai-api.onrender.com/actuator/health)
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://smartchef-ai-api-pxoe.onrender.com/actuator/health)
           echo "Render Health HTTP Status: $response"
           if [ "$response" -eq 200 ] || [ "$response" -eq 301 ] || [ "$response" -eq 302 ]; then
             echo "SmartChef está despierto y saludable."

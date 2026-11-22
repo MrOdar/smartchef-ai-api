@@ -5,10 +5,24 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Spring Boot 4 exige migrar código (SecurityConfig, RestClientConfig) y
+      # springdoc 3 solo funciona sobre Boot 4: ese salto se hace a mano, en su
+      # propio PR. Los parches y versiones menores siguen llegando.
+      - dependency-name: "org.springframework.boot:spring-boot-starter-parent"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.springdoc:springdoc-openapi-starter-webmvc-ui"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Solo versiones LTS de Java (21, 25...): los cambios de versión de Java en
+      # las imágenes se hacen a mano y juntos (compilación y ejecución).
+      - dependency-name: "eclipse-temurin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "maven"
   - package-ecosystem: github-actions
     directory: /
     schedule:

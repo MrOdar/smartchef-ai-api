@@ -36,17 +36,6 @@ public record GeminiProperties(
         }
     }
 
-    public String generateContentUrl() {
-        return generateContentUrl(this.model);
-    }
-
-    public String generateContentUrl(String targetModel) {
-        String effectiveModel = (targetModel != null && !targetModel.isBlank())
-                ? targetModel.trim()
-                : this.model;
-        return "%s/models/%s:generateContent?key=%s".formatted(baseUrl, effectiveModel, apiKey != null ? apiKey : "");
-    }
-
     public boolean hasApiKey() {
         return apiKey != null && !apiKey.isBlank();
     }

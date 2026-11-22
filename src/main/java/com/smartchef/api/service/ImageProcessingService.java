@@ -8,8 +8,11 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Set;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,7 +51,9 @@ public class ImageProcessingService {
             throw new InvalidImageException("No se pudo leer la imagen enviada");
         }
 
-        String mimeType = normalizeMimeType(file.getContentType());
+        // El tipo sale de los bytes, no de la cabecera que manda el cliente.
+        String mimeType = detectMimeType(original);
+        rejectOversizedDimensions(original);
 
         if (original.length <= properties.resizeThresholdBytes()) {
             return new ProcessedImage(original, mimeType);
@@ -63,17 +68,56 @@ public class ImageProcessingService {
         }
         String contentType = file.getContentType();
         if (contentType == null || !SUPPORTED_TYPES.contains(contentType.toLowerCase())) {
-            throw new InvalidImageException(
-                    "Formato no soportado. Usa una imagen JPEG, PNG o WEBP (recibido: " + contentType + ")");
+            throw new InvalidImageException("Formato no soportado. Usa una imagen JPEG, PNG o WEBP");
         }
     }
 
-    private String normalizeMimeType(String contentType) {
-        if (contentType == null) {
+    /**
+     * Identifica el formato por su firma. Un archivo que se anuncia como
+     * image/jpeg pero no lo es se rechaza aqui y no llega a Gemini.
+     */
+    static String detectMimeType(byte[] data) {
+        if (data.length >= 3 && (data[0] & 0xFF) == 0xFF && (data[1] & 0xFF) == 0xD8 && (data[2] & 0xFF) == 0xFF) {
             return "image/jpeg";
         }
-        String lower = contentType.toLowerCase();
-        return "image/jpg".equals(lower) ? "image/jpeg" : lower;
+        if (data.length >= 8 && (data[0] & 0xFF) == 0x89 && data[1] == 'P' && data[2] == 'N' && data[3] == 'G'
+                && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A) {
+            return "image/png";
+        }
+        if (data.length >= 12 && data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F'
+                && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P') {
+            return "image/webp";
+        }
+        throw new InvalidImageException("El archivo no es una imagen JPEG, PNG o WEBP valida");
+    }
+
+    /**
+     * Lee el ancho y el alto de la cabecera sin decodificar la imagen. Un PNG
+     * de pocos KB puede declarar 30000x30000 px, que al decodificarse son GB de
+     * memoria en un contenedor de 512 MB. Si ImageIO no conoce el formato
+     * (WEBP sin plugin) no lo decodificara despues, asi que no hay riesgo.
+     */
+    private void rejectOversizedDimensions(byte[] data) {
+        try (ImageInputStream stream = ImageIO.createImageInputStream(new ByteArrayInputStream(data))) {
+            Iterator<ImageReader> readers = stream == null ? null : ImageIO.getImageReaders(stream);
+            if (readers == null || !readers.hasNext()) {
+                return;
+            }
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(stream, true, true);
+                long pixels = (long) reader.getWidth(0) * reader.getHeight(0);
+                if (pixels > properties.maxPixels()) {
+                    throw new InvalidImageException(
+                            "La imagen tiene demasiada resolucion. Usa una foto de como maximo "
+                                    + properties.maxPixels() / 1_000_000 + " megapixeles");
+                }
+            } finally {
+                reader.dispose();
+            }
+        } catch (IOException e) {
+            throw new InvalidImageException("No se pudo leer la imagen enviada");
+        }
     }
 
     /**

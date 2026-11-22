@@ -8,7 +8,9 @@ import com.smartchef.api.dto.ScanResultResponse;
 import com.smartchef.api.security.SmartChefUserDetails;
 import com.smartchef.api.service.RecipeService;
 import io.swagger.v3.oas.annotations.Operation;
+import com.smartchef.api.ratelimit.RateLimitService;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -38,9 +40,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class RecipeController {
 
     private final RecipeService recipeService;
+    private final RateLimitService rateLimitService;
 
-    public RecipeController(RecipeService recipeService) {
+    public RecipeController(RecipeService recipeService, RateLimitService rateLimitService) {
         this.recipeService = recipeService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping(value = "/generate-from-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -55,7 +59,9 @@ public class RecipeController {
             @ApiResponse(responseCode = "200", description = "Ingredientes detectados y recetas generadas"),
             @ApiResponse(responseCode = "400", description = "Imagen ausente o formato no soportado",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
-            @ApiResponse(responseCode = "413", description = "La imagen supera 15MB",
+            @ApiResponse(responseCode = "413", description = "La imagen supera el tamano maximo",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Cupo de consultas a la IA agotado",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
             @ApiResponse(responseCode = "503", description = "El servicio de IA no esta disponible",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
@@ -64,8 +70,10 @@ public class RecipeController {
             @Parameter(description = "Foto de la despensa o refrigeradora",
                     content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE))
             @RequestParam("image") MultipartFile image,
-            @AuthenticationPrincipal SmartChefUserDetails principal) {
+            @AuthenticationPrincipal SmartChefUserDetails principal,
+            HttpServletRequest httpRequest) {
 
+        rateLimitService.acquireAi(httpRequest);
         Long userId = principal == null ? null : principal.getId();
         return ResponseEntity.ok(recipeService.generateFromImage(image, userId));
     }
@@ -89,8 +97,10 @@ public class RecipeController {
     })
     public ResponseEntity<ScanResultResponse> generateFromIngredients(
             @Valid @RequestBody IngredientsRequest request,
-            @AuthenticationPrincipal SmartChefUserDetails principal) {
+            @AuthenticationPrincipal SmartChefUserDetails principal,
+            HttpServletRequest httpRequest) {
 
+        rateLimitService.acquireAi(httpRequest);
         Long userId = principal == null ? null : principal.getId();
         return ResponseEntity.ok(recipeService.generateFromIngredients(request.ingredients(), userId));
     }

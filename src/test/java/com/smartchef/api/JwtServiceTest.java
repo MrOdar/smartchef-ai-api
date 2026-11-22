@@ -1,6 +1,7 @@
 package com.smartchef.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.smartchef.api.config.JwtProperties;
 import com.smartchef.api.entity.Role;
@@ -78,5 +79,21 @@ class JwtServiceTest {
 
         assertThat(service.isTokenValid(token)).isTrue();
         assertThat(service.extractUsername(token)).isEqualTo("chef_test");
+    }
+
+    @Test
+    @DisplayName("No arranca sin JWT_SECRET")
+    void rejectsMissingSecret() {
+        assertThatThrownBy(() -> new JwtService(new JwtProperties("", 86_400_000L)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("JWT_SECRET");
+    }
+
+    @Test
+    @DisplayName("No arranca con un secreto de menos de 32 bytes")
+    void rejectsShortSecret() {
+        assertThatThrownBy(() -> new JwtService(new JwtProperties("corto", 86_400_000L)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("32 bytes");
     }
 }

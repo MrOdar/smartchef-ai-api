@@ -71,7 +71,7 @@ public class RecipeService {
                 geminiVisionService.analyzeImage(processed.data(), processed.mimeType());
 
         if (result.recipes().isEmpty()) {
-            throw new GeminiServiceException(
+            throw GeminiServiceException.userFacing(
                     "No se detectaron alimentos en la imagen. Prueba con una foto mas clara de tu despensa.");
         }
 
@@ -111,7 +111,7 @@ public class RecipeService {
         GeminiRecipeResult result = geminiVisionService.generateFromIngredients(ingredients);
 
         if (result.recipes().isEmpty()) {
-            throw new GeminiServiceException(
+            throw GeminiServiceException.userFacing(
                     "No se pudo crear ninguna receta con esos ingredientes. Prueba a dejar alguno mas.");
         }
 

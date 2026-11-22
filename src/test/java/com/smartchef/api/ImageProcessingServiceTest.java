@@ -22,7 +22,7 @@ class ImageProcessingServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ImageProcessingService(new ImageProperties(1024, 1_048_576L));
+        service = new ImageProcessingService(new ImageProperties(1024, 1_048_576L, 0L));
     }
 
     @Test
@@ -100,6 +100,10 @@ class ImageProcessingServiceTest {
         fakeWebp[1] = 'I';
         fakeWebp[2] = 'F';
         fakeWebp[3] = 'F';
+        fakeWebp[8] = 'W';
+        fakeWebp[9] = 'E';
+        fakeWebp[10] = 'B';
+        fakeWebp[11] = 'P';
 
         MockMultipartFile file =
                 new MockMultipartFile("image", "despensa.webp", "image/webp", fakeWebp);
@@ -108,5 +112,39 @@ class ImageProcessingServiceTest {
 
         assertThat(processed.data()).isEqualTo(fakeWebp);
         assertThat(processed.mimeType()).isEqualTo("image/webp");
+    }
+
+    @Test
+    @DisplayName("Rechaza un archivo que dice ser JPEG pero no lo es")
+    void rejectsSpoofedContentType() {
+        MockMultipartFile file = new MockMultipartFile(
+                "image", "foto.jpg", "image/jpeg", "<html><script>alert(1)</script></html>".getBytes());
+
+        assertThatThrownBy(() -> service.process(file))
+                .isInstanceOf(InvalidImageException.class)
+                .hasMessageContaining("no es una imagen");
+    }
+
+    @Test
+    @DisplayName("Usa el tipo real de los bytes y no el declarado por el cliente")
+    void detectsRealMimeType() throws IOException {
+        BufferedImage image = new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB);
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        ImageIO.write(image, "png", png);
+        MockMultipartFile file = new MockMultipartFile("image", "foto.jpg", "image/jpeg", png.toByteArray());
+
+        assertThat(service.process(file).mimeType()).isEqualTo("image/png");
+    }
+
+    @Test
+    @DisplayName("Rechaza imagenes con mas pixeles que el tope antes de decodificarlas")
+    void rejectsTooManyPixels() throws IOException {
+        ImageProcessingService strict = new ImageProcessingService(new ImageProperties(1024, 1_048_576L, 100L));
+        MockMultipartFile file = new MockMultipartFile(
+                "image", "foto.jpg", "image/jpeg", TestDataFactory.jpegImage(20, 20));
+
+        assertThatThrownBy(() -> strict.process(file))
+                .isInstanceOf(InvalidImageException.class)
+                .hasMessageContaining("resolucion");
     }
 }

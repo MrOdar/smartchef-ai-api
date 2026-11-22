@@ -5,6 +5,7 @@ import com.smartchef.api.dto.AuthResponse;
 import com.smartchef.api.dto.LoginRequest;
 import com.smartchef.api.dto.RegisterRequest;
 import com.smartchef.api.dto.UserResponse;
+import com.smartchef.api.ratelimit.RateLimitService;
 import com.smartchef.api.security.SmartChefUserDetails;
 import com.smartchef.api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,10 +15,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,9 +34,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final RateLimitService rateLimitService;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, RateLimitService rateLimitService) {
         this.authService = authService;
+        this.rateLimitService = rateLimitService;
     }
 
     @PostMapping(value = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -46,7 +51,9 @@ public class AuthController {
             @ApiResponse(responseCode = "409", description = "Usuario o email ya registrado",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request,
+                                                 HttpServletRequest httpRequest) {
+        rateLimitService.acquireRegister(httpRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
     }
 
@@ -56,10 +63,21 @@ public class AuthController {
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Autenticacion correcta"),
             @ApiResponse(responseCode = "401", description = "Credenciales invalidas",
+                    content = @Content(schema = @Schema(implementation = ApiErrorResponse.class))),
+            @ApiResponse(responseCode = "429", description = "Demasiados intentos",
                     content = @Content(schema = @Schema(implementation = ApiErrorResponse.class)))
     })
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest) {
+        rateLimitService.checkLogin(httpRequest, request.username());
+        try {
+            AuthResponse response = authService.login(request);
+            rateLimitService.recordLoginSuccess(request.username());
+            return ResponseEntity.ok(response);
+        } catch (AuthenticationException fallo) {
+            rateLimitService.recordLoginFailure(request.username());
+            throw fallo;
+        }
     }
 
     @GetMapping("/me")

@@ -32,6 +32,10 @@ smartchef:
     base-url: http://localhost:0/v1beta
     timeout-seconds: 5
     temperature: 0.4
+  # Los frenos se prueban aparte (SecurityHardeningIntegrationTest): aqui
+  # estorbarian a los tests que repiten llamadas desde la misma IP.
+  rate-limit:
+    enabled: false
   image:
     max-width: 1024
     resize-threshold-bytes: 1048576

@@ -5,7 +5,7 @@
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Security-Spring_Security_6_JWT-red?style=for-the-badge&logo=springsecurity)](https://spring.io/projects/spring-security)
-[![Tests](https://img.shields.io/badge/Tests-101%20passed%20(100%25)-success?style=for-the-badge&logo=junit5)](https://github.com/MrOdar/smartchef-ai-api)
+[![Tests](https://img.shields.io/badge/Tests-113%20passed%20(100%25)-success?style=for-the-badge&logo=junit5)](https://github.com/MrOdar/smartchef-ai-api)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20H2-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 
 > **API REST empresarial y Single Page Application (SPA)** de arquitectura hexagonal construida en **Spring Boot 3.3.4 (Java 21 LTS)**. Convierte una fotografía de despensa o refrigerador en **3 recetas de aprovechamiento culinario** utilizando Inteligencia Artificial multimodal (**Google Gemini Vision API**), con conmutación dinámica de modelos de respaldo, sesión demo de costo cero, generación matemática de códigos QR en SVG y autenticación sin estado con **JWT**.
@@ -113,7 +113,7 @@ flowchart TD
 | **Documentación** | Springdoc OpenAPI (Swagger UI) | 2.6.0 | Documentación interactiva de endpoints |
 | **Frontend** | Vanilla JS + CSS3 + SVG Puro | HTML5 | SPA ligera de 158 KB totales sin librerías pesadas |
 | **Contenedores** | Docker (Multi-stage build) | Alpine JRE 21 | Empaquetado ligero para despliegue en Render |
-| **Pruebas** | JUnit 5 + Mockito + AssertJ | 5.10.3 | 101 pruebas automatizadas unitarias y de integración |
+| **Pruebas** | JUnit 5 + Mockito + AssertJ | 5.10.3 | 113 pruebas automatizadas unitarias y de integración |
 
 ---
 
@@ -212,12 +212,12 @@ docker run -p 8080:8080 -e GEMINI_API_KEY="tu-api-key" smartchef-ai-api
 
 ## 🧪 Cobertura de Pruebas Automatizadas
 
-El proyecto cuenta con **101 pruebas automatizadas** que garantizan la estabilidad de todas las capas:
+El proyecto cuenta con **113 pruebas automatizadas** que garantizan la estabilidad de todas las capas:
 
 ```text
 [INFO] Results:
 [INFO] 
-[INFO] Tests run: 101, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 113, Failures: 0, Errors: 0, Skipped: 0
 [INFO] 
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
@@ -225,9 +225,11 @@ El proyecto cuenta con **101 pruebas automatizadas** que garantizan la estabilid
 ```
 
 * **`GeminiVisionServiceTest` (23 pruebas):** Validación de JSON estricto, limpieza de delimitadores markdown, conmutación por error 404, fallback por alta demanda (429/503), recuperación ante errores de modalidad de imagen (HTTP 400), tolerancia a campos opcionales (`chef_tip`), verificación de presupuesto de tokens (`8192`) y filtrado de modelos no visuales.
-* **`ImageProcessingServiceTest` (6 pruebas):** Aceptación de formatos (JPEG, PNG, WEBP), rechazo de archivos corruptos o nulos, y redimensionamiento exacto en memoria a 1024 px.
-* **`JwtServiceTest` (5 pruebas):** Firma HS256, extracción de claims, verificación de expiración y rechazo de tokens manipulados.
+* **`ImageProcessingServiceTest` (9 pruebas):** Aceptación de formatos (JPEG, PNG, WEBP) detectados por su firma y no por la cabecera del cliente, rechazo de archivos corruptos, nulos o con demasiados píxeles, y redimensionamiento exacto en memoria a 1024 px.
+* **`JwtServiceTest` (7 pruebas):** Firma HS256, extracción de claims, verificación de expiración, rechazo de tokens manipulados y arranque bloqueado sin `JWT_SECRET` o con uno corto.
 * **`SmartChefApiIntegrationTest` (42 pruebas):** Pruebas de integración MockMvc de extremo a extremo: registro, login, análisis anónimo vs. autenticado, siembra y consulta de sesión demo (`/demo`), toggling de favoritos, aislamiento de datos multitenant y manejo de errores RFC 7807.
+* **`SecurityHardeningIntegrationTest` (4 pruebas):** Frenos por IP del escaneo con IA (429 + `Retry-After`), bloqueo de cuenta tras fallos de login, errores de Gemini sin detalles internos, cabecera CSP y CORS restringido.
+* **`FixedWindowRateLimiterTest` (3 pruebas):** Ventana fija del limitador en memoria: tope, renovación y reinicio.
 * **`DataSourceConfigTest` (10 pruebas):** Resiliencia en la conversión de URLs `postgres://` y `jdbc:postgresql://`, detección de localhost y fallback a H2.
 * **`DifficultyTest` (15 pruebas):** Parsing y serialización segura de enums de dificultad gastronómica.
 

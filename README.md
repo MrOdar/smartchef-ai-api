@@ -3,12 +3,12 @@
 [![Live Demo](https://img.shields.io/badge/Demo-Live%20on%20Render-brightgreen?style=for-the-badge&logo=render)](https://smartchef-ai-api-pxoe.onrender.com/)
 [![Swagger UI](https://img.shields.io/badge/API_Docs-Swagger_UI-blue?style=for-the-badge&logo=swagger)](https://smartchef-ai-api-pxoe.onrender.com/swagger-ui.html)
 [![Java 21](https://img.shields.io/badge/Java-21%20LTS-orange?style=for-the-badge&logo=openjdk)](https://openjdk.org/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.5.16-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
 [![Spring Security](https://img.shields.io/badge/Security-Spring_Security_6_JWT-red?style=for-the-badge&logo=springsecurity)](https://spring.io/projects/spring-security)
 [![Tests](https://img.shields.io/badge/Tests-113%20passed%20(100%25)-success?style=for-the-badge&logo=junit5)](https://github.com/MrOdar/smartchef-ai-api)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20H2-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
 
-> **API REST empresarial y Single Page Application (SPA)** de arquitectura hexagonal construida en **Spring Boot 3.3.4 (Java 21 LTS)**. Convierte una fotografía de despensa o refrigerador en **3 recetas de aprovechamiento culinario** utilizando Inteligencia Artificial multimodal (**Google Gemini Vision API**), con conmutación dinámica de modelos de respaldo, sesión demo de costo cero, generación matemática de códigos QR en SVG y autenticación sin estado con **JWT**.
+> **API REST empresarial y Single Page Application (SPA)** de arquitectura hexagonal construida en **Spring Boot 3.5.16 (Java 21 LTS)**. Convierte una fotografía de despensa o refrigerador en **3 recetas de aprovechamiento culinario** utilizando Inteligencia Artificial multimodal (**Google Gemini Vision API**), con conmutación dinámica de modelos de respaldo, sesión demo de costo cero, generación matemática de códigos QR en SVG y autenticación sin estado con **JWT**.
 
 ---
 
@@ -34,7 +34,7 @@
 ### 2. Arquitectura de Alta Disponibilidad & Fallback Dinámico
 * **Autodescubrimiento dinámico (*Model Discovery*):** Al iniciar, el servicio inspecciona mediante `ListModels` los modelos activos en Google Cloud AI Studio.
 * **Filtro estricto de visión:** Descarta automáticamente modelos de audio/voz (`-tts`), transcripción o solo-texto para asegurar compatibilidad de imagen al 100%.
-* **Recuperación ante alta demanda (`429 / 503 / 400 Modality`):** Si un modelo sufre saturación de cuota o restricción de modalidad, el motor conmuta automáticamente en milisegundos al siguiente modelo en la cadena de respaldo (`gemini-3.8-flash` ➔ `gemini-3.5-flash-lite` ➔ `gemini-2.5-flash`).
+* **Recuperación ante alta demanda (`429 / 503 / 400 Modality`):** Si un modelo sufre saturación de cuota o restricción de modalidad, el motor conmuta automáticamente en milisegundos al siguiente modelo en la cadena de respaldo (`gemini-3.8-flash` ➔ `gemini-3.5-flash-lite` ➔ `gemini-2.5-flash` ➔ `gemini-2.5-flash-lite`).
 * **Filtrado de *Thinking Tokens*:** Eliminación automática de razonamientos internos y delimitadores markdown (` ```json `) para garantizar deserialización Jackson 100% determinista.
 
 ### 3. Sesión Demo Instantánea (`/api/v1/recipes/demo`) — Costo Cero
@@ -104,16 +104,16 @@ flowchart TD
 | Capa | Tecnología | Versión | Propósito |
 |---|---|---|---|
 | **Lenguaje** | Java | 21 LTS | Lenguaje base con soporte para Virtual Threads y Records |
-| **Framework** | Spring Boot | 3.3.4 | Framework backend empresarial |
-| **Seguridad** | Spring Security + JJWT | 6.3.3 / 0.12.6 | Autenticación basada en tokens JWT con BCrypt |
-| **Persistencia** | Spring Data JPA / Hibernate | 6.5.3 | Mapeo objeto-relacional y consultas parametrizadas |
-| **Pool de Conexiones** | HikariCP | 5.1.0 | Pool de alto rendimiento con detección dinámica de PostgreSQL |
-| **Bases de Datos** | PostgreSQL / H2 Database | 42.7.4 / 2.2.224 | Base de datos relacional (producción y pruebas/local) |
+| **Framework** | Spring Boot | 3.5.16 | Framework backend empresarial |
+| **Seguridad** | Spring Security + JJWT | 6.5.11 / 0.13.0 | Autenticación basada en tokens JWT con BCrypt |
+| **Persistencia** | Spring Data JPA / Hibernate | 6.6.53 | Mapeo objeto-relacional y consultas parametrizadas |
+| **Pool de Conexiones** | HikariCP | 6.3.3 | Pool de alto rendimiento con detección dinámica de PostgreSQL |
+| **Bases de Datos** | PostgreSQL / H2 Database | 42.7.11 / 2.3.232 | Base de datos relacional (producción y pruebas/local) |
 | **Inteligencia Artificial** | Google Gemini Vision API | v1beta | Detección multimodal de ingredientes y generación estructurada |
-| **Documentación** | Springdoc OpenAPI (Swagger UI) | 2.6.0 | Documentación interactiva de endpoints |
-| **Frontend** | Vanilla JS + CSS3 + SVG Puro | HTML5 | SPA ligera de 158 KB totales sin librerías pesadas |
+| **Documentación** | Springdoc OpenAPI (Swagger UI) | 2.10.1 | Documentación interactiva de endpoints |
+| **Frontend** | Vanilla JS + CSS3 + SVG Puro | HTML5 | SPA ligera (~420 KB de estáticos) sin librerías pesadas |
 | **Contenedores** | Docker (Multi-stage build) | Alpine JRE 21 | Empaquetado ligero para despliegue en Render |
-| **Pruebas** | JUnit 5 + Mockito + AssertJ | 5.10.3 | 113 pruebas automatizadas unitarias y de integración |
+| **Pruebas** | JUnit 5 + Mockito + AssertJ | 5.12.2 | 113 pruebas automatizadas unitarias y de integración |
 
 ---
 
@@ -134,6 +134,7 @@ Prefijo global: `/api/v1`
 | Método | Endpoint | Acceso | Descripción |
 |---|---|---|---|
 | `POST` | `/recipes/generate-from-image` | Público / Opcional | Analiza imagen (`multipart/form-data`) con Gemini Vision. Si se incluye JWT, se asocia al historial. |
+| `POST` | `/recipes/from-ingredients` | Público / Opcional | Rehace 3 recetas a partir de una lista de ingredientes (máx. 40, de 60 caracteres), sin imagen. Consume cuota de Gemini. |
 | `GET` | `/recipes/demo` | Público | Retorna la sesión demo con 3 recetas precomputadas en ~8 ms sin llamadas salientes a la IA. |
 | `GET` | `/recipes/history` | `Bearer JWT` | Lista paginada del historial de escaneos y recetas creadas por el usuario autenticado. |
 | `POST` | `/recipes/{id}/favorite` | `Bearer JWT` | Alterna el estado de favorito (toggle) para una receta específica. |
@@ -153,7 +154,14 @@ Prefijo global: `/api/v1`
 4. **Protección de Secretos y Variables de Entorno:**
    * Secretos como `GEMINI_API_KEY`, `JWT_SECRET` y credenciales de base de datos nunca se encuentran en Git; se inyectan a través de variables de entorno de Render o Docker.
 5. **Configuración de CORS y Headers de Seguridad:**
-   * Restricción controlada de orígenes y cabeceras de navegación (`Frame-Options: SAMEORIGIN` para incrustación segura de Swagger UI).
+   * CORS cerrado por defecto: solo los orígenes listados en `CORS_ALLOWED_ORIGINS` (la SPA del propio servicio no lo necesita).
+   * Content-Security-Policy y `Frame-Options: SAMEORIGIN` (incrustación segura de Swagger UI).
+6. **Frenos contra abuso (`429` + `Retry-After`):**
+   * Escaneo con IA: 10 por IP y hora, y un tope global de 200 al día para proteger la cuota de Gemini.
+   * Login: 20 intentos por IP cada 15 min y bloqueo temporal de la cuenta tras 5 fallos; registro: 5 por IP y hora.
+   * La IP se toma de `CF-Connecting-IP` (Cloudflare delante de Render), no de `X-Forwarded-For`, que el cliente puede falsificar. Todo es configurable con variables `RATE_LIMIT_*`.
+7. **API key de Gemini fuera de URLs y errores:**
+   * La key viaja solo en la cabecera `x-goog-api-key`; los errores de la IA llegan al cliente sin detalles internos.
 
 ---
 
@@ -171,12 +179,15 @@ cd smartchef-ai-api
 ```
 
 ### 2. Configurar variables de entorno
+`JWT_SECRET` es **obligatoria**: sin ella (o con menos de 32 bytes) la aplicación no arranca, a propósito.
 ```bash
 # Windows PowerShell
 $env:GEMINI_API_KEY = "tu-api-key-de-google-ai-studio"
+$env:JWT_SECRET = "una-clave-aleatoria-de-al-menos-32-bytes"   # p. ej. openssl rand -base64 48
 
 # Linux / macOS
 export GEMINI_API_KEY="tu-api-key-de-google-ai-studio"
+export JWT_SECRET="$(openssl rand -base64 48)"
 ```
 
 ### 3. Compilar y ejecutar la suite de pruebas
@@ -205,7 +216,7 @@ El proyecto incluye un `Dockerfile` optimizado en múltiples etapas (*multi-stag
 docker build -t smartchef-ai-api .
 
 # Ejecutar el contenedor
-docker run -p 8080:8080 -e GEMINI_API_KEY="tu-api-key" smartchef-ai-api
+docker run -p 8080:8080 -e GEMINI_API_KEY="tu-api-key" -e JWT_SECRET="$(openssl rand -base64 48)" smartchef-ai-api
 ```
 
 ---
@@ -244,7 +255,7 @@ Universidad Peruana de Ciencias Aplicadas (UPC), Lima, Perú
 * **LinkedIn:** [linkedin.com/in/odar-alcocer](https://www.linkedin.com/in/odar-alcocer)  
 * **GitHub:** [@MrOdar](https://github.com/MrOdar)  
 * **Email:** [odaralcv@gmail.com](mailto:odaralcv@gmail.com)  
-* **Portafolio Web:** [github.com/MrOdar/portfolio-web](https://github.com/MrOdar/portfolio-web)
+* **Portafolio Web:** [odaralcocer.pages.dev](https://odaralcocer.pages.dev)
 
 ---
 

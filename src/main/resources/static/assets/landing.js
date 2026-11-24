@@ -1,9 +1,13 @@
+// Marca que JavaScript corre: el CSS solo oculta lo que se revela al hacer scroll
+// bajo .js, así la página se ve completa si el script no carga (Hallmark, gate 62).
+document.documentElement.classList.add('js');
+
 // 1. Barra de Progreso de Lectura
 const progressBar = document.getElementById('scroll-progress');
 window.addEventListener('scroll', () => {
   const totalHeight = document.documentElement.scrollHeight - window.innerHeight;
   const progress = totalHeight > 0 ? (window.scrollY / totalHeight) * 100 : 0;
-  progressBar.style.width = `${progress}%`;
+  progressBar.style.transform = `scaleX(${progress / 100})`;
 });
 
 // 2. Scroll Reveal Animations con Intersection Observer
@@ -40,14 +44,11 @@ btnSwitchToTopbar.addEventListener('click', () => {
 // ==================== ANIMATED THEME TOGGLER (GPU NATIVE 60FPS) ====================
 const themeBtn = document.getElementById('theme-btn');
 const dockThemeBtn = document.getElementById('dock-theme-toggle');
-const themeIcon = document.getElementById('theme-icon');
 
 function applyTheme(targetTheme) {
   document.documentElement.setAttribute('data-theme', targetTheme);
   localStorage.setItem('smartchef-theme', targetTheme);
-  const icon = targetTheme === 'light' ? '🌙' : '☀️';
-  if (themeIcon) themeIcon.textContent = icon;
-  if (dockThemeBtn) dockThemeBtn.textContent = icon;
+  // Los íconos de luna y sol están en el HTML; el CSS muestra el que toca según data-theme.
 }
 
 function toggleThemeAnimated(e) {
